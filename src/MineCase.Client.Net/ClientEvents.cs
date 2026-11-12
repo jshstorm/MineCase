@@ -174,6 +174,19 @@ namespace MineCase.Client.Net
         public bool OnGround { get; }
     }
 
+    public sealed class EntityHeadTurnedEvent : ClientEvent
+    {
+        public EntityHeadTurnedEvent(uint entityId, float headYaw)
+        {
+            EntityId = entityId;
+            HeadYaw = headYaw;
+        }
+
+        public uint EntityId { get; }
+
+        public float HeadYaw { get; }
+    }
+
     public sealed class EntitiesDestroyedEvent : ClientEvent
     {
         public EntitiesDestroyedEvent(uint[] entityIds)

@@ -159,11 +159,30 @@ namespace MineCase.GodotClient
             AddChild(node);
         }
 
-        private void AddSurface(ArrayMesh target, MeshData data, Material material)
+        /// <summary>
+        /// One surface of <see cref="MeshData"/> with no material, for the entity parts.
+        /// </summary>
+        /// <param name="data">Vertex data.</param>
+        /// <returns>The mesh.</returns>
+        public static ArrayMesh ToArrayMesh(MeshData data)
+        {
+            var mesh = new ArrayMesh();
+            if (!data.IsEmpty)
+                mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, ToArrays(data));
+            return mesh;
+        }
+
+        private static void AddSurface(ArrayMesh target, MeshData data, Material material)
         {
             if (data.IsEmpty)
                 return;
 
+            target.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, ToArrays(data));
+            target.SurfaceSetMaterial(target.GetSurfaceCount() - 1, material);
+        }
+
+        private static Godot.Collections.Array ToArrays(MeshData data)
+        {
             // The mesher winds counter-clockwise; Godot treats clockwise triangles as front faces.
             var indices = data.Indices.ToArray();
             for (var i = 0; i < indices.Length; i += 3)
@@ -176,8 +195,7 @@ namespace MineCase.GodotClient
             arrays[(int)Mesh.ArrayType.TexUV] = data.Uvs.Select(uv => new Vector2(uv.X, uv.Y)).ToArray();
             arrays[(int)Mesh.ArrayType.Color] = data.Colors.Select(ToGodot).ToArray();
             arrays[(int)Mesh.ArrayType.Index] = indices;
-            target.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
-            target.SurfaceSetMaterial(target.GetSurfaceCount() - 1, material);
+            return arrays;
         }
 
         private void FreeColumnNode(int chunkX, int chunkZ)

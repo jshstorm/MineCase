@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Rendering\BlockStates115.txt" LogicalName="MineCase.Client.Net.BlockStates115.txt" />
+    <EmbeddedResource Include="Rendering\EntityTypes115.txt" LogicalName="MineCase.Client.Net.EntityTypes115.txt" />
   </ItemGroup>
 
   <ItemGroup>

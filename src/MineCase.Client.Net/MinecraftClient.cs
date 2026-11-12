@@ -290,6 +290,11 @@ namespace MineCase.Client.Net
                     var look = PacketDeserializer.Deserialize<EntityLook>(ref reader);
                     EnqueueMove(look.EID, 0, 0, 0, look.Yaw.Degrees, look.Pitch.Degrees, look.OnGround);
                     return null;
+                case 0x3C:
+                    var headLook = PacketDeserializer.Deserialize<EntityHeadLook>(ref reader);
+                    if (_entities.ContainsKey(headLook.EID))
+                        Events.Enqueue(new EntityHeadTurnedEvent(headLook.EID, headLook.Yaw.Degrees));
+                    return null;
                 case 0x57:
                     var entityTeleport = PacketDeserializer.Deserialize<EntityTeleport>(ref reader);
                     _entities[entityTeleport.EID] = (entityTeleport.X, entityTeleport.Y, entityTeleport.Z);

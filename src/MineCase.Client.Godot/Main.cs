@@ -22,6 +22,7 @@ namespace MineCase.GodotClient
 
         private MinecraftClient _client;
         private WorldView _world;
+        private EntityView _entities;
         private PlayerController _player;
         private Control _menu;
         private LineEdit _hostEdit;
@@ -47,6 +48,8 @@ namespace MineCase.GodotClient
             BuildEnvironment();
             _world = new WorldView { Name = "World" };
             AddChild(_world);
+            _entities = new EntityView { Name = "Entities" };
+            AddChild(_entities);
             _player = new PlayerController { Name = "Player", Position = new Vector3(0, 100, 0) };
             AddChild(_player);
             BuildUi();
@@ -237,6 +240,18 @@ namespace MineCase.GodotClient
                     case TimeUpdatedEvent time:
                         _timeOfDay = time.TimeOfDay;
                         break;
+                    case EntitySpawnedEvent spawned:
+                        _entities.Spawn(spawned);
+                        break;
+                    case EntityMovedEvent moved:
+                        _entities.Move(moved);
+                        break;
+                    case EntityHeadTurnedEvent turned:
+                        _entities.TurnHead(turned);
+                        break;
+                    case EntitiesDestroyedEvent destroyed:
+                        _entities.Destroy(destroyed);
+                        break;
                     case HealthUpdatedEvent health:
                         _health = health.Health;
                         break;
@@ -254,6 +269,7 @@ namespace MineCase.GodotClient
             _player.Frozen = true;
             foreach (var column in new List<ChunkColumn>(_world.World.Columns))
                 _world.RemoveColumn(column.ChunkX, column.ChunkZ);
+            _entities.Clear();
             Input.MouseMode = Input.MouseModeEnum.Visible;
             _menu.Visible = true;
             _connectButton.Disabled = false;
@@ -273,7 +289,7 @@ namespace MineCase.GodotClient
             var p = _player.GlobalPosition;
             _hud.Text =
                 $"XYZ {p.X:F1} / {p.Y:F1} / {p.Z:F1}   방향 {_player.MinecraftYaw:F0}° {(_player.Flying ? "[비행]" : string.Empty)}{(_player.Frozen ? " [청크 대기]" : string.Empty)}\n" +
-                $"청크 {_world.World.ColumnCount} (대기 {_world.PendingColumns})   삼각형 {_world.TriangleCount:N0}   FPS {Engine.GetFramesPerSecond()}\n" +
+                $"청크 {_world.World.ColumnCount} (대기 {_world.PendingColumns})   엔티티 {_entities.Count}   삼각형 {_world.TriangleCount:N0}   FPS {Engine.GetFramesPerSecond()}\n" +
                 $"체력 {_health:F0}   시각 {(_timeOfDay % 24000) / 1000.0 + 6 % 24:F1}h" +
                 (_lastError != null ? $"\n오류: {_lastError}" : string.Empty) +
                 "\nWASD 이동 · 마우스 시점 · Space 점프 · F 비행 · Esc 마우스 해제";
@@ -296,7 +312,7 @@ namespace MineCase.GodotClient
 
             _args.Remove("screenshot");
             GetViewport().GetTexture().GetImage().SavePng(path);
-            GD.Print($"Saved screenshot to {path}: spawned={_spawned} columns={_world.World.ColumnCount} pending={_world.PendingColumns} triangles={_world.TriangleCount} position={_player.GlobalPosition} frozen={_player.Frozen} fps={Engine.GetFramesPerSecond()}");
+            GD.Print($"Saved screenshot to {path}: spawned={_spawned} entities={_entities.Count} columns={_world.World.ColumnCount} pending={_world.PendingColumns} triangles={_world.TriangleCount} position={_player.GlobalPosition} frozen={_player.Frozen} fps={Engine.GetFramesPerSecond()}");
             GetTree().Quit();
         }
 
