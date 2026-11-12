@@ -58,7 +58,7 @@ namespace MineCase.Server.Game.Entities
         {
             UUID = uuid;
             await SetPosition(position);
-            await GetBroadcastGenerator().SpawnObject(EntityId, uuid, 2, position, 0, 0, 0);
+            await GetBroadcastGenerator().SpawnObject(EntityId, uuid, ProtocolEntityTypes.Item, position, 0, 0, 0);
         }*/
     }
 }

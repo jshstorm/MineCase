@@ -58,7 +58,7 @@ namespace MineCase.Server.Network.Play
             });
         }
 
-        public async Task SpawnMob(uint entityId, Guid uuid, byte entityType, Vector3 position, float pitch, float yaw, Game.Entities.EntityMetadata.Entity metadata)
+        public async Task SpawnMob(uint entityId, Guid uuid, uint entityType, Vector3 position, float pitch, float yaw, Game.Entities.EntityMetadata.Entity metadata)
         {
             // Since 1.15 the spawn packet carries no metadata; it follows as a separate Entity Metadata packet.
             await SendPacket(CreateSpawnMob(entityId, uuid, entityType, position, pitch, yaw));
@@ -240,7 +240,7 @@ namespace MineCase.Server.Network.Play
             }
         }
 
-        private static SpawnMob CreateSpawnMob(uint entityId, Guid uuid, byte entityType, Vector3 position, float pitch, float yaw)
+        private static SpawnMob CreateSpawnMob(uint entityId, Guid uuid, uint entityType, Vector3 position, float pitch, float yaw)
         {
             return new SpawnMob
             {

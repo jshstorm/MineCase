@@ -1,6 +1,7 @@
 using System;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Reflection;
@@ -27,6 +28,11 @@ namespace MineCase.Client.Net
         private const uint LoginState = 2;
         private const uint StatusState = 1;
 
+        /// <summary>
+        /// Entity type id of players in the 1.15.2 registry.
+        /// </summary>
+        public const uint PlayerEntityType = 101;
+
         private readonly string _host;
         private readonly int _port;
         private readonly string _username;
@@ -36,6 +42,7 @@ namespace MineCase.Client.Net
         private readonly IBufferPool<byte> _bufferPool = new BufferPool<byte>(ArrayPool<byte>.Shared);
         private readonly CancellationTokenSource _cancellation = new CancellationTokenSource();
         private readonly object _positionLock = new object();
+        private readonly Dictionary<uint, (double X, double Y, double Z)> _entities = new Dictionary<uint, (double X, double Y, double Z)>();
 
         private TcpClient _tcpClient;
         private NetworkStream _stream;
@@ -259,9 +266,61 @@ namespace MineCase.Client.Net
                     var health = PacketDeserializer.Deserialize<UpdateHealth>(ref reader);
                     Events.Enqueue(new HealthUpdatedEvent(health.Health, health.Food));
                     return null;
+                case 0x00:
+                    var spawnObject = PacketDeserializer.Deserialize<SpawnObject>(ref reader);
+                    Events.Enqueue(TrackSpawn(spawnObject.EID, spawnObject.Type, spawnObject.X, spawnObject.Y, spawnObject.Z, spawnObject.Yaw.Degrees, spawnObject.Pitch.Degrees));
+                    return null;
+                case 0x03:
+                    var spawnMob = PacketDeserializer.Deserialize<SpawnMob>(ref reader);
+                    Events.Enqueue(TrackSpawn(spawnMob.EID, spawnMob.Type, spawnMob.X, spawnMob.Y, spawnMob.Z, spawnMob.Yaw.Degrees, spawnMob.Pitch.Degrees));
+                    return null;
+                case 0x05:
+                    var spawnPlayer = PacketDeserializer.Deserialize<SpawnPlayer>(ref reader);
+                    Events.Enqueue(TrackSpawn(spawnPlayer.EntityId, PlayerEntityType, spawnPlayer.X, spawnPlayer.Y, spawnPlayer.Z, spawnPlayer.Yaw.Degrees, spawnPlayer.Pitch.Degrees));
+                    return null;
+                case 0x29:
+                    var move = PacketDeserializer.Deserialize<EntityRelativeMove>(ref reader);
+                    EnqueueMove(move.EID, move.DeltaX, move.DeltaY, move.DeltaZ, null, null, move.OnGround);
+                    return null;
+                case 0x2A:
+                    var moveLook = PacketDeserializer.Deserialize<EntityLookAndRelativeMove>(ref reader);
+                    EnqueueMove(moveLook.EID, moveLook.DeltaX, moveLook.DeltaY, moveLook.DeltaZ, moveLook.Yaw.Degrees, moveLook.Pitch.Degrees, moveLook.OnGround);
+                    return null;
+                case 0x2B:
+                    var look = PacketDeserializer.Deserialize<EntityLook>(ref reader);
+                    EnqueueMove(look.EID, 0, 0, 0, look.Yaw.Degrees, look.Pitch.Degrees, look.OnGround);
+                    return null;
+                case 0x57:
+                    var entityTeleport = PacketDeserializer.Deserialize<EntityTeleport>(ref reader);
+                    _entities[entityTeleport.EID] = (entityTeleport.X, entityTeleport.Y, entityTeleport.Z);
+                    Events.Enqueue(new EntityMovedEvent(entityTeleport.EID, entityTeleport.X, entityTeleport.Y, entityTeleport.Z, entityTeleport.Yaw.Degrees, entityTeleport.Pitch.Degrees, entityTeleport.OnGround));
+                    return null;
+                case 0x38:
+                    var destroy = PacketDeserializer.Deserialize<DestroyEntities>(ref reader);
+                    foreach (var id in destroy.EntityIds)
+                        _entities.Remove(id);
+                    Events.Enqueue(new EntitiesDestroyedEvent(destroy.EntityIds));
+                    return null;
                 default:
                     return null;
             }
+        }
+
+        private EntitySpawnedEvent TrackSpawn(uint entityId, uint entityType, double x, double y, double z, float yaw, float pitch)
+        {
+            _entities[entityId] = (x, y, z);
+            return new EntitySpawnedEvent(entityId, entityType, x, y, z, yaw, pitch);
+        }
+
+        // Relative moves are in 1/4096 block; entities the client never saw spawn are ignored.
+        private void EnqueueMove(uint entityId, short deltaX, short deltaY, short deltaZ, float? yaw, float? pitch, bool onGround)
+        {
+            if (!_entities.TryGetValue(entityId, out var position))
+                return;
+
+            position = (position.X + (deltaX / 4096.0), position.Y + (deltaY / 4096.0), position.Z + (deltaZ / 4096.0));
+            _entities[entityId] = position;
+            Events.Enqueue(new EntityMovedEvent(entityId, position.X, position.Y, position.Z, yaw, pitch, onGround));
         }
 
         private TeleportEvent ApplyTeleport(ClientboundPositionAndLook teleport)

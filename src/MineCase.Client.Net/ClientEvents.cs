@@ -112,6 +112,78 @@ namespace MineCase.Client.Net
         public uint Food { get; }
     }
 
+    /// <summary>
+    /// A mob, object or other player appeared. <see cref="EntityType"/> is the 1.15.2 entity registry id.
+    /// </summary>
+    public sealed class EntitySpawnedEvent : ClientEvent
+    {
+        public EntitySpawnedEvent(uint entityId, uint entityType, double x, double y, double z, float yaw, float pitch)
+        {
+            EntityId = entityId;
+            EntityType = entityType;
+            X = x;
+            Y = y;
+            Z = z;
+            Yaw = yaw;
+            Pitch = pitch;
+        }
+
+        public uint EntityId { get; }
+
+        public uint EntityType { get; }
+
+        public double X { get; }
+
+        public double Y { get; }
+
+        public double Z { get; }
+
+        public float Yaw { get; }
+
+        public float Pitch { get; }
+    }
+
+    /// <summary>
+    /// New absolute position of an entity; yaw and pitch are null when the packet did not change them.
+    /// </summary>
+    public sealed class EntityMovedEvent : ClientEvent
+    {
+        public EntityMovedEvent(uint entityId, double x, double y, double z, float? yaw, float? pitch, bool onGround)
+        {
+            EntityId = entityId;
+            X = x;
+            Y = y;
+            Z = z;
+            Yaw = yaw;
+            Pitch = pitch;
+            OnGround = onGround;
+        }
+
+        public uint EntityId { get; }
+
+        public double X { get; }
+
+        public double Y { get; }
+
+        public double Z { get; }
+
+        public float? Yaw { get; }
+
+        public float? Pitch { get; }
+
+        public bool OnGround { get; }
+    }
+
+    public sealed class EntitiesDestroyedEvent : ClientEvent
+    {
+        public EntitiesDestroyedEvent(uint[] entityIds)
+        {
+            EntityIds = entityIds;
+        }
+
+        public uint[] EntityIds { get; }
+    }
+
     public sealed class DisconnectedEvent : ClientEvent
     {
         public DisconnectedEvent(string reason, Exception exception = null)
