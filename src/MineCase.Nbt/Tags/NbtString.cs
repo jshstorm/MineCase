@@ -3,16 +3,19 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MineCase.Nbt.Serialization;
+using Orleans;
 
 namespace MineCase.Nbt.Tags
 {
     /// <see cref="NbtTagType.String"/>
+    [GenerateSerializer]
     public sealed class NbtString : NbtTag
     {
         public override NbtTagType TagType => NbtTagType.String;
 
         public override bool HasValue => true;
 
+        [Id(0)]
         private string _value;
 
         public string Value

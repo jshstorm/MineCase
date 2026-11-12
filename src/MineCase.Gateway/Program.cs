@@ -8,9 +8,7 @@ using MineCase.Gateway.Network;
 using System.Reflection;
 using System.Threading.Tasks;
 using Orleans.Runtime;
-using Polly;
 using Orleans.Configuration;
-using Orleans.ApplicationParts;
 using Orleans.Hosting;
 using Microsoft.Extensions.Hosting;
 
@@ -22,6 +20,7 @@ namespace MineCase.Gateway
         {
             var hostBuilder = new HostBuilder()
                 .ConfigureAppConfiguration(ConfigureAppConfiguration)
+                .UseOrleansClient(ConfigureOrleansClient)
                 .ConfigureServices(ConfigureServices)
                 .ConfigureLogging(ConfigureLogging)
                 .UseConsoleLifetime();

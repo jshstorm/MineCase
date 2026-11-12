@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.Engine;
 using MineCase.Graphics;
@@ -31,9 +32,9 @@ namespace MineCase.Server.World
 
         private StateHolder State => GetValue(StateComponent<StateHolder>.StateProperty);
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             _neighborFinders = new List<(Cuboid Box, ICollectableFinder Finder)>();
             foreach (var crossCoord in CrossCoords)
             {
@@ -76,7 +77,7 @@ namespace MineCase.Server.World
                                                                             .SelectMany(o => o));
             result.Remove(entity);
             if (result.Count != 0)
-                entity.InvokeOneWay(e => e.Tell(new CollisionWith { Entities = result }));
+                _ = entity.TellOneWay(new CollisionWith { Entities = result });
         }
 
         public async Task SpawnPickup(Vector3 position, Immutable<Slot[]> slots)

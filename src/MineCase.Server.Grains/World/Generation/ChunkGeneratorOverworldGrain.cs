@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MineCase.Algorithm;
@@ -48,7 +49,7 @@ namespace MineCase.Server.World.Generation
 
         private GenLayer _genlayer;
 
-        public override Task OnActivateAsync()
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             _densityMap = new float[5, 33, 5];
             _depthMap = new float[5, 1, 5];

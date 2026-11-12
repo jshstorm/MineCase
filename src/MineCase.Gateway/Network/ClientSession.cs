@@ -8,6 +8,7 @@ using Orleans;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -20,7 +21,7 @@ namespace MineCase.Gateway.Network
     {
         private readonly TcpClient _tcpClient;
         private Stream _remoteStream;
-        private readonly IOrleansClient _grainFactory;
+        private readonly IClusterClient _grainFactory;
         private volatile bool _useCompression = false;
         private readonly Guid _sessionId;
         private readonly OutcomingPacketObserver _outcomingPacketObserver;
@@ -32,7 +33,7 @@ namespace MineCase.Gateway.Network
 
         private uint _compressThreshold;
 
-        public ClientSession(TcpClient tcpClient, IOrleansClient grainFactory, IBufferPool<byte> bufferPool, ObjectPool<UncompressedPacket> uncompressedPacketObjectPool, IPacketCompress packetCompress)
+        public ClientSession(TcpClient tcpClient, IClusterClient grainFactory, IBufferPool<byte> bufferPool, ObjectPool<UncompressedPacket> uncompressedPacketObjectPool, IPacketCompress packetCompress)
         {
             _sessionId = Guid.NewGuid();
             _tcpClient = tcpClient;
@@ -49,7 +50,7 @@ namespace MineCase.Gateway.Network
             using (_remoteStream = _tcpClient.GetStream())
             {
                 // subscribe observer to get packet from server
-                _clientboundPacketObserverRef = await _grainFactory.CreateObjectReference<IClientboundPacketObserver>(_outcomingPacketObserver);
+                _clientboundPacketObserverRef = _grainFactory.CreateObjectReference<IClientboundPacketObserver>(_outcomingPacketObserver);
                 await _grainFactory.GetGrain<IClientboundPacketSink>(_sessionId).Subscribe(_clientboundPacketObserverRef);
                 try
                 {
@@ -85,15 +86,18 @@ namespace MineCase.Gateway.Network
         {
             using (var bufferScope = _bufferPool.CreateScope())
             {
+                // Compression is switched on by the outgoing side while this read may already be waiting,
+                // so pick the format only once the next packet has started arriving.
+                var length = Protocol.Protocol.ReadPacketLength(_remoteStream);
                 UncompressedPacket packet;
                 if (_useCompression)
                 {
-                    var compressedPacket = await CompressedPacket.DeserializeAsync(_remoteStream, null);
+                    var compressedPacket = await CompressedPacket.DeserializeAsync(_remoteStream, length, null);
                     packet = _packetCompress.Decompress(compressedPacket, _compressThreshold);
                 }
                 else
                 {
-                    packet = await UncompressedPacket.DeserializeAsync(_remoteStream, bufferScope);
+                    packet = await UncompressedPacket.DeserializeAsync(_remoteStream, length, bufferScope);
                 }
 
                 await DispatchIncomingPacket(packet);
@@ -118,13 +122,14 @@ namespace MineCase.Gateway.Network
                     }
                     else
                     {
-                        await packet.SerializeAsync(_remoteStream);
-                    }
+                        // The client answers SetCompression with compressed packets, so incoming reads switch before it is sent.
+                        if (packet.PacketId == Protocol.Protocol.SetCompressionPacketId)
+                        {
+                            _compressThreshold = GetCompressionThreshold(packet);
+                            _useCompression = true;
+                        }
 
-                    if (!_useCompression && packet.PacketId == Protocol.Protocol.SetCompressionPacketId)
-                    {
-                        _compressThreshold = GetCompressionThreshold(packet);
-                        _useCompression = true;
+                        await packet.SerializeAsync(_remoteStream);
                     }
                 }
             }
@@ -155,23 +160,62 @@ namespace MineCase.Gateway.Network
             }
         }
 
+        // Puts the sink's packets back in sequence order before they reach the socket.
         class OutcomingPacketObserver : IClientboundPacketObserver
         {
+            // Give up on a missing packet once this many later ones are waiting (a dropped message would stall the session otherwise).
+            private const int MaxPendingPackets = 1024;
+
             private readonly ClientSession _session;
+            private readonly object _lock = new object();
+            private readonly SortedDictionary<long, UncompressedPacket> _pending = new SortedDictionary<long, UncompressedPacket>();
+            private Guid _stream;
+            private long _expected;
 
             public OutcomingPacketObserver(ClientSession session)
             {
                 _session = session;
             }
 
-            public void OnClosed()
+            public void OnClosed(Guid stream, long sequence)
             {
-                _session.OnClosed();
+                Accept(stream, sequence, null);
             }
 
-            public void ReceivePacket(UncompressedPacket packet)
+            public void ReceivePacket(Guid stream, long sequence, UncompressedPacket packet)
             {
-                _session.DispatchOutcomingPacket(packet);
+                Accept(stream, sequence, packet);
+            }
+
+            // A null packet marks the close notification.
+            private void Accept(Guid stream, long sequence, UncompressedPacket packet)
+            {
+                lock (_lock)
+                {
+                    if (stream != _stream)
+                    {
+                        // A new sink activation numbers its packets from zero again.
+                        _stream = stream;
+                        _expected = 0;
+                        _pending.Clear();
+                    }
+
+                    if (sequence < _expected)
+                        return;
+
+                    _pending[sequence] = packet;
+                    if (_pending.Count > MaxPendingPackets)
+                        _expected = _pending.Keys.First();
+
+                    while (_pending.Remove(_expected, out var next))
+                    {
+                        _expected++;
+                        if (next == null)
+                            _session.OnClosed();
+                        else
+                            _session.DispatchOutcomingPacket(next);
+                    }
+                }
             }
         }
 

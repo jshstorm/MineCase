@@ -125,7 +125,8 @@ namespace MineCase.Server.User
 
             var game = await GetGameSession();
             await game.LeaveGame(this);
-            await _sink.Close();
+            if (_sink != null)
+                await _sink.Close();
             _sink = null;
             DeactivateOnIdle();
         }
@@ -205,10 +206,10 @@ namespace MineCase.Server.User
 
         public Task ForwardPacket(UncompressedPacket packet)
         {
-            _player.InvokeOneWay(p => p.Tell(new ServerboundPacketMessage
+            _ = _player.TellOneWay(new ServerboundPacketMessage
             {
                 Packet = packet
-            }));
+            });
             return Task.CompletedTask;
         }
 

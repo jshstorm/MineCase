@@ -3,15 +3,20 @@ using System.Collections.Generic;
 using System.Text;
 using MineCase.Block;
 using MineCase.World;
+using Orleans;
 
 namespace MineCase
 {
+    [GenerateSerializer]
     public class BlockStateChange
     {
+        [Id(0)]
         public BlockWorldPos Position { get; set; }
 
+        [Id(1)]
         public BlockState State { get; set; }
 
+        [Id(2)]
         public List<BlockState> Condition { get; set; }
     }
 

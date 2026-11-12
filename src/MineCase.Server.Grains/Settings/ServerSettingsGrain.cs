@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -21,7 +22,7 @@ namespace MineCase.Server.Settings
         }
 
         // read settings from file
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             string settingsFile = await ReadSettingsAsString("server.json");
             try

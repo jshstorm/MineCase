@@ -16,11 +16,11 @@ namespace MineCase.Gateway.Network
 {
     class ConnectionRouter : IHostedService
     {
-        private readonly IOrleansClient _grainFactory;
+        private readonly IClusterClient _grainFactory;
         private readonly ILogger _logger;
         private readonly IServiceProvider _serviceProvider;
 
-        public ConnectionRouter(IOrleansClient grainFactory, ILogger<ConnectionRouter> logger, IServiceProvider serviceProvider)
+        public ConnectionRouter(IClusterClient grainFactory, ILogger<ConnectionRouter> logger, IServiceProvider serviceProvider)
         {
             _grainFactory = grainFactory;
             _logger = logger;

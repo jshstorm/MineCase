@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.Engine;
 using MineCase.Server.Components;
@@ -30,9 +31,9 @@ namespace MineCase.Server.Game.Entities
             SetComponent(new SyncMobStateComponent());
         }
 
-        public async override Task OnActivateAsync()
+        public async override Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             this.SetLocalValue(HealthComponent.MaxHealthProperty, 20);
             this.SetLocalValue(HealthComponent.HealthProperty, GetValue(HealthComponent.MaxHealthProperty));
             this.SetLocalValue(EntityOnGroundComponent.IsOnGroundProperty, true);

@@ -4,12 +4,15 @@ using System.IO;
 using System.Text;
 using MineCase.Nbt.Serialization;
 using MineCase.Nbt.Tags;
+using Orleans;
 
 namespace MineCase.Nbt
 {
     // TODO: 实现 NbtFile 的其他接口，实现从压缩的数据中读取 Tag
+    [GenerateSerializer]
     public class NbtFile
     {
+        [Id(0)]
         public NbtCompound RootTag { get; }
 
         /// <summary>

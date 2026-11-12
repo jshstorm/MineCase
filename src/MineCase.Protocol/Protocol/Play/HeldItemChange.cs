@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MineCase.Serialization;
+using Orleans;
 
 namespace MineCase.Protocol.Play
 {
-    [Packet(0x23)]
     [GenerateSerializer]
+    [Packet(0x23)]
+    [GeneratePacketSerializer]
     public sealed partial class ServerboundHeldItemChange : IPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.Short)]
         public short Slot;
     }

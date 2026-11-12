@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using MineCase.Server.Game.Entities;
@@ -19,7 +20,7 @@ namespace MineCase.Server.Game.Windows
 
         protected override Chat Title { get; } = new Chat("Inventory");
 
-        public override Task OnActivateAsync()
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             SlotAreas.Add(new CraftingSlotArea(2, this, GrainFactory));
             SlotAreas.Add(new ArmorSlotArea(this, GrainFactory));
@@ -27,7 +28,7 @@ namespace MineCase.Server.Game.Windows
             SlotAreas.Add(new HotbarSlotArea(this, GrainFactory));
             SlotAreas.Add(new OffhandSlotArea(this, GrainFactory));
 
-            return base.OnActivateAsync();
+            return base.OnActivateAsync(cancellationToken);
         }
 
         public override Task<Slot> DistributeStack(IPlayer player, Slot item)

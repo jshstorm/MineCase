@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using Orleans;
 
 namespace MineCase
 {
+    [GenerateSerializer]
     public struct Position : IEquatable<Position>
     {
+        [Id(0)]
         public int X { get; set; }
 
+        [Id(1)]
         public int Y { get; set; }
 
+        [Id(2)]
         public int Z { get; set; }
 
         public static implicit operator Vector3(Position position)

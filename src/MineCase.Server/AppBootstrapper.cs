@@ -45,6 +45,7 @@ namespace MineCase.Server
         private static void ConfigureLogging(ILoggingBuilder loggingBuilder)
         {
             loggingBuilder.AddConsole();
+            loggingBuilder.AddFilter("Polly", LogLevel.Warning);
         }
     }
 }

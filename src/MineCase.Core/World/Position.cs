@@ -3,15 +3,20 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 using MineCase.World;
+using Orleans;
 
 namespace MineCase.World
 {
+    [GenerateSerializer]
     public struct BlockWorldPos
     {
+        [Id(0)]
         public int X { get; set; }
 
+        [Id(1)]
         public int Y { get; set; }
 
+        [Id(2)]
         public int Z { get; set; }
 
         public BlockWorldPos(int x, int y, int z)
@@ -308,10 +313,13 @@ namespace MineCase.World
         }
     }
 
+    [GenerateSerializer]
     public struct ChunkWorldPos : IEquatable<ChunkWorldPos>
     {
+        [Id(0)]
         public int X { get; set; }
 
+        [Id(1)]
         public int Z { get; set; }
 
         public ChunkWorldPos(int x, int z)
@@ -362,12 +370,16 @@ namespace MineCase.World
         }
     }
 
+    [GenerateSerializer]
     public struct EntityWorldPos
     {
+        [Id(0)]
         public float X { get; set; }
 
+        [Id(1)]
         public float Y { get; set; }
 
+        [Id(2)]
         public float Z { get; set; }
 
         public EntityWorldPos(float x, float y, float z)

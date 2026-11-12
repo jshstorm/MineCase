@@ -12,44 +12,45 @@ using Microsoft.CodeAnalysis.Text;
 namespace MineCase.CodeGeneration
 {
     [Generator]
-    public class PacketSerializerGenerator : ISourceGenerator
+    public class PacketSerializerGenerator : IIncrementalGenerator
     {
-        public void Execute(SourceGeneratorContext context)
+        private const string ClassAttributeName = "MineCase.Serialization.GeneratePacketSerializerAttribute";
+        private const string FieldAttributeName = "MineCase.Serialization.SerializeAsAttribute";
+
+        public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            if (!(context.SyntaxReceiver is SyntaxReceiver receiver))
-                return;
+            var sources = context.SyntaxProvider.ForAttributeWithMetadataName(
+                ClassAttributeName,
+                static (node, _) => node is ClassDeclarationSyntax,
+                static (ctx, _) => GenerateSource(ctx));
+
+            context.RegisterSourceOutput(sources, static (spc, item) =>
+                spc.AddSource(item.HintName, SourceText.From(item.Source, Encoding.UTF8)));
+        }
+
+        private static (string HintName, string Source) GenerateSource(GeneratorAttributeSyntaxContext ctx)
+        {
+            var cls = (ClassDeclarationSyntax)ctx.TargetNode;
+            var clsSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
+            var compilation = ctx.SemanticModel.Compilation;
+            var fieldAttributeSymbol = compilation.GetTypeByMetadataName(FieldAttributeName)!;
+
+            var clsAttribute = ctx.Attributes[0];
+            var methods = clsAttribute.NamedArguments.FirstOrDefault(x => x.Key == "Methods").Value.Value;
+            var mdValue = methods == null ? GenerateSerializerMethods.Both : (GenerateSerializerMethods)(int)methods;
 
             var codeWriter = new StringBuilder();
-
-            var compilation = context.Compilation;
-            var clsAttributeSymbol = compilation.GetTypeByMetadataName("MineCase.Serialization.GenerateSerializerAttribute");
-            var fieldAttributeSymbol = compilation.GetTypeByMetadataName("MineCase.Serialization.SerializeAsAttribute");
-
-            foreach (var cls in receiver.CandidateClasses)
-            {
-                var model = compilation.GetSemanticModel(cls.SyntaxTree);
-                var clsSymbol = model.GetDeclaredSymbol(cls) as ITypeSymbol;
-                var clsAttribute = clsSymbol.GetAttributes().FirstOrDefault(x => x.AttributeClass.Equals(clsAttributeSymbol, SymbolEqualityComparer.Default));
-                if (clsAttribute != null)
-                {
-                    var methods = clsAttribute.NamedArguments.FirstOrDefault(x => x.Key == "Methods").Value.Value;
-                    var mdValue = methods == null ? GenerateSerializerMethods.Both : (GenerateSerializerMethods)(int)methods;
-
-                    ProcessClass(cls, clsSymbol, mdValue, codeWriter, compilation, fieldAttributeSymbol);
-                }
-            }
-
-            var source = SourceText.From(
-                @"using System;
+            codeWriter.Append(@"using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MineCase.Serialization;
 
-" + codeWriter.ToString(), Encoding.UTF8);
+");
+            new PacketSerializerGenerator().ProcessClass(cls, clsSymbol, mdValue, codeWriter, compilation, fieldAttributeSymbol);
 
-            // File.WriteAllText(@"D:\packet.g.cs", source.ToString());
-            context.AddSource("packet.g.cs", source);
+            var hintName = $"{clsSymbol.ContainingNamespace.ToDisplayString()}.{clsSymbol.MetadataName}.g.cs";
+            return (hintName, codeWriter.ToString());
         }
 
         private void ProcessClass(ClassDeclarationSyntax cls, ITypeSymbol clsSymbol, GenerateSerializerMethods mdValue, StringBuilder codeWriter, Compilation compilation, INamedTypeSymbol fieldAttributeSymbol)
@@ -62,9 +63,9 @@ using MineCase.Serialization;
             try
             {
                 var fields = from fSymbol in clsSymbol.GetMembers().OfType<IFieldSymbol>()
-                             let attr = fSymbol.GetAttributes().FirstOrDefault(x => x.AttributeClass.Equals(fieldAttributeSymbol, SymbolEqualityComparer.Default))
+                             let attr = fSymbol.GetAttributes().FirstOrDefault(x => SymbolEqualityComparer.Default.Equals(x.AttributeClass, fieldAttributeSymbol))
                              where attr != null
-                             let dataType = (DataType)(int)attr.ConstructorArguments[0].Value
+                             let dataType = (DataType)(int)attr.ConstructorArguments[0].Value!
                              select new
                              {
                                  Symbol = fSymbol,
@@ -79,7 +80,7 @@ using MineCase.Serialization;
 
                 string GetArrayLengthMember(ImmutableArray<KeyValuePair<string, TypedConstant>> args)
                 {
-                    var arg = (string)GetNamedArgument(args, "ArrayLengthMember");
+                    var arg = (string?)GetNamedArgument(args, "ArrayLengthMember");
                     if (arg != null)
                         return "(int)" + arg;
                     return string.Empty;
@@ -198,25 +199,6 @@ using MineCase.Serialization;
             if (type.TypeKind == TypeKind.Enum || type.IsUnmanagedType)
                 return $"({type.ToDisplayString()})";
             return string.Empty;
-        }
-
-        public void Initialize(InitializationContext context)
-        {
-            context.RegisterForSyntaxNotifications(() => new SyntaxReceiver());
-        }
-
-        private class SyntaxReceiver : ISyntaxReceiver
-        {
-            public List<ClassDeclarationSyntax> CandidateClasses { get; } = new List<ClassDeclarationSyntax>();
-
-            public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
-            {
-                if (syntaxNode is ClassDeclarationSyntax classDeclarationSyntax
-                    && classDeclarationSyntax.AttributeLists.Count > 0)
-                {
-                    CandidateClasses.Add(classDeclarationSyntax);
-                }
-            }
         }
 
         private enum GenerateSerializerMethods

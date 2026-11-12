@@ -7,18 +7,22 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using MineCase.Nbt.Serialization;
+using Orleans;
 
 namespace MineCase.Nbt.Tags
 {
     /// <see cref="NbtTagType.List"/>
+    [GenerateSerializer]
     public sealed class NbtList : NbtTag, IEnumerable<NbtTag>
     {
         public override NbtTagType TagType => NbtTagType.List;
 
         public override bool HasValue => false;
 
+        [Id(0)]
         public NbtTagType ElementType { get; private set; }
 
+        [Id(1)]
         private readonly List<NbtTag> _childTags;
 
         public int Count => _childTags.Count;

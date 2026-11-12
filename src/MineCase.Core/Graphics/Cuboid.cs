@@ -1,16 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Graphics
 {
+    [GenerateSerializer]
     [Serializable]
     public class Cuboid : Shape, IEquatable<Cuboid>
     {
         public override ShapeType Type => ShapeType.Cuboid;
 
+        [Id(0)]
         public Point3d Point { get; set; }
 
+        [Id(1)]
         public Size Size { get; set; }
 
         public Cuboid(Point3d point, Size size)

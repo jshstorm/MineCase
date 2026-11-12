@@ -1,5 +1,8 @@
-﻿namespace MineCase
+﻿using Orleans;
+
+namespace MineCase
 {
+    [GenerateSerializer]
     public enum ClientboundAnimationId : byte
     {
         SwingMainArm = 0,

@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Orleans;
 
 namespace MineCase
 {
+    [GenerateSerializer]
     public struct Angle
     {
+        [Id(0)]
         public byte Value { get; set; }
 
         public float Degrees

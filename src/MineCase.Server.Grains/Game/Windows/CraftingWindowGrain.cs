@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.Server.Game.Windows.SlotAreas;
 
@@ -12,13 +13,13 @@ namespace MineCase.Server.Game.Windows
 
         protected override Chat Title { get; } = new Chat("Crafting Table");
 
-        public override Task OnActivateAsync()
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             SlotAreas.Add(new CraftingSlotArea(3, this, GrainFactory));
             SlotAreas.Add(new InventorySlotArea(this, GrainFactory));
             SlotAreas.Add(new HotbarSlotArea(this, GrainFactory));
 
-            return base.OnActivateAsync();
+            return base.OnActivateAsync(cancellationToken);
         }
     }
 }

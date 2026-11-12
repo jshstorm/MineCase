@@ -2,17 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Nbt.Tags
 {
     /// <summary>
     /// NBT Tag 的抽象基类
     /// </summary>
+    [GenerateSerializer]
     public abstract class NbtTag
     {
         /// <summary>
         /// Gets 该 Tag 从属于的 Tag
         /// </summary>
+        [Id(0)]
         public NbtTag Parent { get; internal set; }
 
         /// <summary>
@@ -28,6 +31,7 @@ namespace MineCase.Nbt.Tags
         /// <remarks>该属性指示本 Tag 是否具有 Value 属性</remarks>
         public abstract bool HasValue { get; }
 
+        [Id(1)]
         private string _name;
 
         /// <summary>

@@ -18,8 +18,8 @@ MineCase
 ![Screenshots](screenshots/1.jpg)
 
 ## 运行需要
-* [.Net Core 3.1](https://www.microsoft.com/net/download)
-* [MongoDB](https://www.mongodb.com/download-center/community)
+* [.NET 10 SDK](https://dotnet.microsoft.com/download)
+* [MongoDB](https://www.mongodb.com/download-center/community) 4.2 或更高版本
 
 ## 安装
 

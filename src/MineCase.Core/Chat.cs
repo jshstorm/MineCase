@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Orleans;
 
 namespace MineCase
 {
     /// <summary>
     /// Available types for color of Compoent.
     /// </summary>
+    [GenerateSerializer]
     public enum ColorType
     {
         Black = 0,
@@ -32,6 +34,7 @@ namespace MineCase
     /// <summary>
     /// Available types for Action of ClickEvent.
     /// </summary>
+    [GenerateSerializer]
     public enum ClickEventType
     {
         OpenUrl = 0,
@@ -43,6 +46,7 @@ namespace MineCase
     /// <summary>
     /// Available types for Action of HoverEvent.
     /// </summary>
+    [GenerateSerializer]
     public enum HoverEventType
     {
         ShowText = 0,
@@ -53,6 +57,7 @@ namespace MineCase
     /// <summary>
     /// Available types for keybind.
     /// </summary>
+    [GenerateSerializer]
     public enum KeyBindType
     {
         Attack = 0,
@@ -93,6 +98,7 @@ namespace MineCase
     /// <summary>
     /// One of the fields of the component.
     /// </summary>
+    [GenerateSerializer]
     public class ChatClickEvent
     {
         private static readonly string[] _map = new string[4]
@@ -103,8 +109,10 @@ namespace MineCase
             "change_page"
         };
 
+        [Id(0)]
         public ClickEventType Action { get; set; }
 
+        [Id(1)]
         public JToken Value { get; set; }
 
         /// <summary>
@@ -136,6 +144,7 @@ namespace MineCase
     /// <summary>
     /// One of the fields of the component.
     /// </summary>
+    [GenerateSerializer]
     public class ChatHoverEvent
     {
         private static readonly string[] _map = new string[3]
@@ -145,8 +154,10 @@ namespace MineCase
             "show_entity"
         };
 
+        [Id(0)]
         public HoverEventType Action { get; set; }
 
+        [Id(1)]
         public JToken Value { get; set; }
 
         /// <summary>
@@ -178,12 +189,16 @@ namespace MineCase
     /// <summary>
     /// A object in the ScoreComponent.
     /// </summary>
+    [GenerateSerializer]
     public class ChatScore
     {
+        [Id(0)]
         public string Name { get; set; }
 
+        [Id(1)]
         public string Objective { get; set; }
 
+        [Id(2)]
         public int? Value { get; set; }
 
         /// <summary>
@@ -228,6 +243,7 @@ namespace MineCase
     /// <summary>
     /// An abstract base class that contains the fields common to all components.
     /// </summary>
+    [GenerateSerializer]
     public class ChatComponent
     {
         private static readonly string[] _map = new string[17]
@@ -237,24 +253,34 @@ namespace MineCase
             "aqua", "red", "light_purple", "yellow", "white", "reset"
         };
 
+        [Id(0)]
         public bool? Bold { get; set; }
 
+        [Id(1)]
         public bool? Itatic { get; set; }
 
+        [Id(2)]
         public bool? Underlined { get; set; }
 
+        [Id(3)]
         public bool? Strikethrough { get; set; }
 
+        [Id(4)]
         public bool? Obfuscated { get; set; }
 
+        [Id(5)]
         public string Insertion { get; set; }
 
+        [Id(6)]
         public ColorType? Color { get; set; }
 
+        [Id(7)]
         public ChatClickEvent ClickEvent { get; set; }
 
+        [Id(8)]
         public ChatHoverEvent HoverEvent { get; set; }
 
+        [Id(9)]
         public List<ChatComponent> Extra { get; set; }
 
         public void CheckKeyExist(object key, string name)
@@ -326,8 +352,10 @@ namespace MineCase
     /// <summary>
     /// String component, which  contains only text.
     /// </summary>
+    [GenerateSerializer]
     public class StringComponent : ChatComponent
     {
+        [Id(0)]
         public string Text { get; set; }
 
         /// <summary>
@@ -358,10 +386,13 @@ namespace MineCase
     /// <summary>
     /// Translation component. Translates text into the current language.
     /// </summary>
+    [GenerateSerializer]
     public class TranslationComponent : ChatComponent
     {
+        [Id(0)]
         public string Translate { get; set; }
 
+        [Id(1)]
         public List<ChatComponent> With { get; set; }
 
         /// <summary>
@@ -407,6 +438,7 @@ namespace MineCase
     /// <summary>
     /// Keybind component. Displays the client's current keybind for the specified key.
     /// </summary>
+    [GenerateSerializer]
     public class KeybindComponent : ChatComponent
     {
         private static readonly string[] _map = new string[33]
@@ -420,6 +452,7 @@ namespace MineCase
             "key.hotbar.5", "key.hotbar.6", "key.hotbar.7", "key.hotbar.8", "key.hotbar.9"
         };
 
+        [Id(0)]
         public KeyBindType? Keybind { get; set; }
 
         /// <summary>
@@ -450,8 +483,10 @@ namespace MineCase
     /// <summary>
     /// Score component. Displays a score.
     /// </summary>
+    [GenerateSerializer]
     public class ScoreComponent : ChatComponent
     {
+        [Id(0)]
         public ChatScore Score { get; set; }
 
         /// <summary>
@@ -482,8 +517,10 @@ namespace MineCase
     /// <summary>
     /// Selector component. Displays the results of an entity selector.
     /// </summary>
+    [GenerateSerializer]
     public class SelectorComponent : ChatComponent
     {
+        [Id(0)]
         public string Selector { get; set; }
 
         /// <summary>
@@ -514,6 +551,7 @@ namespace MineCase
     /// <summary>
     /// Chat data, which has a top-level component, can convert to a JSON string conveniently.
     /// </summary>
+    [GenerateSerializer]
     public class Chat
     {
         private static readonly Dictionary<string, int> _dict = new Dictionary<string, int>
@@ -538,6 +576,7 @@ namespace MineCase
         /// <summary>
         /// Gets or sets the top-level component of this object.
         /// </summary>
+        [Id(0)]
         public ChatComponent Component { get; set; }
 
         /// <summary>

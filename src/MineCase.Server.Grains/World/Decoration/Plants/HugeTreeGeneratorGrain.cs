@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MineCase.Block;
@@ -19,9 +20,9 @@ namespace MineCase.Server.World.Decoration.Plants
             _logger = loggerFactory.CreateLogger<HugeTreeGeneratorGrain>();
         }
 
-        public async override Task OnActivateAsync()
+        public async override Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             _baseHeight = _generatorSettings.TreeHeight;
             _extraRandomHeight = _generatorSettings.ExtraHeight;
         }

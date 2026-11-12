@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MineCase.Serialization;
+using Orleans;
 
 namespace MineCase.Protocol.Play
 {
+    [GenerateSerializer]
     public enum ActionId : uint
     {
         StartSneaking = 0,
@@ -19,16 +21,20 @@ namespace MineCase.Protocol.Play
         StartFlyingWithElytra = 8
     }
 
-    [Packet(0x1B)]
     [GenerateSerializer]
+    [Packet(0x1B)]
+    [GeneratePacketSerializer]
     public sealed partial class EntityAction : IPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.VarInt)]
         public uint EntityId;
 
+        [Id(1)]
         [SerializeAs(DataType.VarInt)]
         public ActionId ActionId;
 
+        [Id(2)]
         [SerializeAs(DataType.VarInt)]
         public uint JumpBoost;
     }

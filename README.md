@@ -11,7 +11,7 @@ MineCase
 The project is designed to create a high-performance, distributed `Minecraft` server with virtual actor provided by Orleans distributed framework. 
 Different chunks are managed on different servers so that more players can join in and play in the same world. This makes minecraft servers more scalable.
 Servers like Anarchy servers can allow more players to join in without waiting in queue by using distributed server.
-It written in `C#` with `.NET Core 3.1` env and based on `orleans` framework to work with released [1.15.2 protocol](https://www.minecraft.net/en-us/article/minecraft-java-edition-1-15-2). The [website](https://wiki.vg/) describes the Minecraft protocol clearly.
+It written in `C#` with `.NET 10` env and based on `orleans` 10 framework to work with released [1.15.2 protocol](https://www.minecraft.net/en-us/article/minecraft-java-edition-1-15-2). The [website](https://wiki.vg/) describes the Minecraft protocol clearly.
 
 **MineCase is under refactoring, so branch refactor may not work.**
 
@@ -20,8 +20,8 @@ It written in `C#` with `.NET Core 3.1` env and based on `orleans` framework to 
 ![Screenshots](screenshots/1.jpg)
 
 ## Run Requirements
-* [.Net Core 3.1](https://www.microsoft.com/net/download)
-* [MongoDB](https://www.mongodb.com/download-center/community)
+* [.NET 10 SDK](https://dotnet.microsoft.com/download)
+* [MongoDB](https://www.mongodb.com/download-center/community) 4.2 or later
 
 ## Install (Build From Source)
 * 1 . Download and install a `.NET Core sdk` from this [page](https://www.microsoft.com/net/download).
@@ -37,6 +37,18 @@ It written in `C#` with `.NET Core 3.1` env and based on `orleans` framework to 
     * **OSX** : Run the `build_and_run.sh`.
     * **Linux** : Run the `build_and_run.sh`.
     * **Win** : Double-click `build_and_run.bat`.
+
+## Godot client
+`src/MineCase.Client.Godot` is a small Godot 4 (C#) client for MineCase servers in offline mode. It logs in, draws the chunks the server sends (flat colours per block type, no Minecraft textures), lets you walk or fly around with collision, and reports your position so the server streams the chunks around you. Inventory, entities, chat and block editing are not implemented.
+
+* Requires the **.NET** build of [Godot 4.7](https://godotengine.org/download) and the .NET 10 SDK.
+* Start the server and gateway first, then open `src/MineCase.Client.Godot/project.godot` in Godot and press Play, enter the address and click connect.
+* Controls: WASD move, mouse look (click to capture, Esc to release), Space jump, F toggle flying (Space/Shift up/down), Ctrl sprint.
+* Command-line options after `--`: `--host`, `--port`, `--name`, `--view-distance`, `--autoconnect`, `--fly`, `--offset-y`, `--look-pitch`, `--screenshot <png> --screenshot-after <seconds>`, `--trace`.
+
+The networking, chunk decoding and meshing live in `src/MineCase.Client.Net`, a plain .NET library that reuses `MineCase.Protocol` and `MineCase.Core` and can be used without Godot (for bots or tests).
+
+The old Unity client in `src/MineCase.Client*` is a 2017 prototype for Minecraft 1.12 and no longer builds.
 
 ## How it works
 None

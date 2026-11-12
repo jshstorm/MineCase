@@ -54,7 +54,7 @@ namespace MineCase.Server.World
                 foreach (var entity in State.DiscoveryEntities)
                 {
                     if (entity.Equals(player)) continue;
-                    entity.InvokeOneWay(g => g.Tell(message));
+                    _ = entity.TellOneWay(message);
                 }
 
                 if (active && State.IsTickEmitterActive)
@@ -70,8 +70,10 @@ namespace MineCase.Server.World
             {
                 if (_players.Count == 0)
                 {
+                    // No DeactivateOnIdle here: Leave usually runs inside this partition's own tick, and since Orleans 7
+                    // deactivation waits for that tick while the tick waits on calls back into this partition.
+                    // With the timer stopped the partition is idle and the runtime collects it.
                     _fixedUpdate.Stop();
-                    DeactivateOnIdle();
                 }
             }
 
@@ -83,7 +85,7 @@ namespace MineCase.Server.World
             if (State.DiscoveryEntities.Add(entity))
             {
                 MarkDirty();
-                entity.InvokeOneWay(e => e.Tell(BroadcastDiscovered.Default));
+                _ = entity.TellOneWay(BroadcastDiscovered.Default);
             }
 
             return Task.CompletedTask;

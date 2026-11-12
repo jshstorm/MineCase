@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.Server.Network;
 using MineCase.Server.User;
@@ -8,6 +9,7 @@ using MineCase.Server.World;
 using MineCase.World;
 using Orleans;
 using Orleans.Concurrency;
+using Orleans.Streams;
 
 namespace MineCase.Server.Game
 {
@@ -16,15 +18,15 @@ namespace MineCase.Server.Game
     {
         private Guid _jobWorkerId;
 
-        public override Task OnActivateAsync()
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             _jobWorkerId = Guid.NewGuid();
-            return base.OnActivateAsync();
+            return base.OnActivateAsync(cancellationToken);
         }
 
         public Task PostChunk(ChunkWorldPos chunkPos, IReadOnlyCollection<IClientboundPacketSink> clients, IReadOnlyCollection<IUserChunkLoader> loaders)
         {
-            var stream = GetStreamProvider(StreamProviders.JobsProvider).GetStream<SendChunkJob>(_jobWorkerId, StreamProviders.Namespaces.ChunkSender);
+            var stream = this.GetStreamProvider(StreamProviders.JobsProvider).GetStream<SendChunkJob>(StreamProviders.Namespaces.ChunkSender, _jobWorkerId);
             return stream.OnNextAsync(new SendChunkJob
             {
                 World = GrainFactory.GetGrain<IWorld>(this.GetPrimaryKeyString()),

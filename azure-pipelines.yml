@@ -12,7 +12,7 @@ jobs:
 - job: Linux
   timeoutInMinutes: 0
   pool:
-    vmImage: 'ubuntu-18.04'
+    vmImage: 'ubuntu-latest'
 
   variables:
     buildConfiguration: 'Release'
@@ -22,10 +22,9 @@ jobs:
     submodules: true
 
   - task: UseDotNet@2
-    displayName: 'Install .NET Core SDK'
+    displayName: 'Install .NET SDK'
     inputs:
-      version: '5.0.100-preview.4.20258.7' 
-      includePreviewVersions: true # Required for preview versions
+      useGlobalJson: true
 
   - task: DotNetCoreCLI@2
     displayName: Build

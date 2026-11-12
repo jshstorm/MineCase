@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Orleans;
 
 namespace MineCase.World.Biomes
 {
+    [GenerateSerializer]
     public enum BiomeId : byte
     {
         Ocean = 0,

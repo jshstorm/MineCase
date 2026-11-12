@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.World;
 using Orleans;
@@ -13,12 +14,12 @@ namespace MineCase.Server.World
 
         protected ChunkWorldPos ChunkWorldPos { get; private set; }
 
-        public override Task OnActivateAsync()
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             var keys = this.GetWorldAndChunkWorldPos();
             World = GrainFactory.GetGrain<IWorld>(keys.WorldKey);
             ChunkWorldPos = keys.ChunkWorldPos;
-            return base.OnActivateAsync();
+            return base.OnActivateAsync(cancellationToken);
         }
     }
 }

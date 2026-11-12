@@ -3,25 +3,30 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Numerics;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Graphics
 {
+    [GenerateSerializer]
     [Serializable]
     public struct Size : IEquatable<Size>
     {
         /// <summary>
         /// Gets or sets the size of X-axis.
         /// </summary>
+        [Id(0)]
         public float Length { get; set; }
 
         /// <summary>
         /// Gets or sets the size of Z-axis.
         /// </summary>
+        [Id(1)]
         public float Width { get; set; }
 
         /// <summary>
         /// Gets or sets the size of Y-axis.
         /// </summary>
+        [Id(2)]
         public float Height { get; set; }
 
         public Size(float length, float width, float height = 0f)

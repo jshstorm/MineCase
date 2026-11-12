@@ -1,13 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Block
 {
+    [GenerateSerializer]
     public struct BlockState : IEquatable<BlockState>
     {
+        [Id(0)]
         public uint Id { get; set; }
 
+        [Id(1)]
         public uint MetaValue { get; set; }
 
         public bool IsId(BlockId id)

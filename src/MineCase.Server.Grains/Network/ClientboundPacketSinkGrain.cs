@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.Protocol;
 using MineCase.Protocol.Handshaking;
@@ -13,7 +14,9 @@ namespace MineCase.Server.Network
 {
     internal class ClientboundPacketSinkGrain : Grain, IClientboundPacketSink
     {
+        private readonly Guid _stream = Guid.NewGuid();
         private Grains.GrainObserverManager<IClientboundPacketObserver> _subsManager;
+        private long _sequence;
         private readonly IPacketPackager _packetPackager;
 
         public ClientboundPacketSinkGrain(IPacketPackager packetPackager)
@@ -21,11 +24,11 @@ namespace MineCase.Server.Network
             _packetPackager = packetPackager;
         }
 
-        public override Task OnActivateAsync()
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             _subsManager = new Grains.GrainObserverManager<IClientboundPacketObserver>();
             _subsManager.ExpirationDuration = new TimeSpan(0, 0, 20);
-            return base.OnActivateAsync();
+            return base.OnActivateAsync(cancellationToken);
         }
 
         // Clients call this to subscribe.
@@ -56,15 +59,22 @@ namespace MineCase.Server.Network
                 Data = new ArraySegment<byte>(data.Value)
             };
             if (_subsManager.Count == 0)
+            {
                 DeactivateOnIdle();
+            }
             else
-                _subsManager.Notify(n => n.ReceivePacket(packet));
+            {
+                var sequence = _sequence++;
+                _subsManager.Notify(n => n.ReceivePacket(_stream, sequence, packet));
+            }
+
             return Task.CompletedTask;
         }
 
         public Task Close()
         {
-            _subsManager.Notify(n => n.OnClosed());
+            var sequence = _sequence++;
+            _subsManager.Notify(n => n.OnClosed(_stream, sequence));
             _subsManager.Clear();
             DeactivateOnIdle();
             return Task.CompletedTask;

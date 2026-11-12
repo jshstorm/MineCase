@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Nbt
 {
@@ -22,6 +23,7 @@ namespace MineCase.Nbt
     /// NBT Tag 的类型.
     /// </summary>
     /// <remarks>注释内容来自<see href="http://wiki.vg/NBT#Specification"/>.</remarks>
+    [GenerateSerializer]
     public enum NbtTagType : byte
     {
         /// <summary>

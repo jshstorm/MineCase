@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using MineCase.Engine.Serialization;
 using MineCase.Graphics;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 
 namespace MineCase.Serialization.Serializers
 {
@@ -23,6 +25,7 @@ namespace MineCase.Serialization.Serializers
                 c.AddKnownType(typeof(Cuboid));
             });
 
+            BsonSerializer.TryRegisterSerializer(new GuidSerializer(GuidRepresentation.Standard));
             BsonSerializer.RegisterSerializer(new SlotSerializer());
             BsonSerializer.RegisterSerializer(new DependencyObjectStateSerializer());
             BsonSerializer.RegisterSerializer(new BlockChunkPosSerializer());

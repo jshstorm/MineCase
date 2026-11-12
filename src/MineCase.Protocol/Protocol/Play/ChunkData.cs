@@ -6,39 +6,51 @@ using MineCase.Nbt;
 using MineCase.Nbt.Tags;
 using MineCase.Serialization;
 using MineCase.World;
+using Orleans;
 
 namespace MineCase.Protocol.Play
 {
+    [GenerateSerializer]
     [Packet(0x22)]
     public sealed class ChunkData : IPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.Int)]
         public int ChunkX;
 
+        [Id(1)]
         [SerializeAs(DataType.Int)]
         public int ChunkZ;
 
+        [Id(2)]
         [SerializeAs(DataType.Boolean)]
         public bool FullChunk;
 
+        [Id(3)]
         [SerializeAs(DataType.VarInt)]
         public uint PrimaryBitMask;
 
+        [Id(4)]
         [SerializeAs(DataType.NBTTag)]
         public NbtCompound Heightmaps;
 
+        [Id(5)]
         [SerializeAs(DataType.VarInt)]
         public uint Size;
 
+        [Id(6)]
         [SerializeAs(DataType.Array)]
         public ChunkSection[] Data;
 
+        [Id(7)]
         [SerializeAs(DataType.IntArray)]
         public int[] Biomes;
 
+        [Id(8)]
         [SerializeAs(DataType.VarInt)]
         public uint NumberOfBlockEntities;
 
+        [Id(9)]
         [SerializeAs(DataType.NbtArray)]
         public NbtCompound[] BlockEntities;
 
@@ -101,23 +113,30 @@ namespace MineCase.Protocol.Play
         }
     }
 
+    [GenerateSerializer]
     public sealed class ChunkSection : IPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.Short)]
         public short BlockCount;
 
+        [Id(1)]
         [SerializeAs(DataType.Byte)]
         public byte BitsPerBlock;
 
+        [Id(2)]
         [SerializeAs(DataType.VarInt)]
         public uint PaletteLength;
 
+        [Id(3)]
         [SerializeAs(DataType.Array)]
         public uint[] Palette;
 
+        [Id(4)]
         [SerializeAs(DataType.VarInt)]
         public uint DataArrayLength;
 
+        [Id(5)]
         [SerializeAs(DataType.Array)]
         public ulong[] DataArray;
 
@@ -127,7 +146,6 @@ namespace MineCase.Protocol.Play
             {
                 BlockCount = br.ReadAsShort(),
                 BitsPerBlock = br.ReadAsByte(),
-                PaletteLength = br.ReadAsVarInt(out _)
             };
 
             if (result.BitsPerBlock < 4)
@@ -136,6 +154,8 @@ namespace MineCase.Protocol.Play
             }
             else if (result.BitsPerBlock >= 5 && result.BitsPerBlock < 9)
             {
+                // Mirrors Serialize: the palette length is only written for indirect palettes.
+                result.PaletteLength = br.ReadAsVarInt(out _);
                 if (result.PaletteLength != 0)
                 {
                     var paletteReader = br.ReadAsSubReader((int)result.PaletteLength);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.Server.Game;
 using MineCase.Server.Persistence;
@@ -33,9 +34,9 @@ namespace MineCase.Server.World
             SetComponent(new PeriodicSaveStateComponent(TimeSpan.FromMinutes(1)));
         }
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
 
             var serverSettings = GrainFactory.GetGrain<IServerSettings>(0);
             _genSettings = new GeneratorSettings();

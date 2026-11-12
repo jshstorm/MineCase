@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MineCase.Engine.Serialization;
+using Orleans;
+using Orleans.Runtime;
 using Orleans.Streams;
 
 namespace MineCase.Engine
@@ -16,7 +19,7 @@ namespace MineCase.Engine
 
         protected ILogger Logger { get; private set; }
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             Logger = ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(GetType());
             InitializePreLoadComponent();
@@ -24,10 +27,15 @@ namespace MineCase.Engine
             InitializeComponents();
         }
 
-        public override async Task OnDeactivateAsync()
+        public override async Task OnDeactivateAsync(DeactivationReason reason, CancellationToken cancellationToken)
         {
             await WriteStateAsync();
-            await base.OnDeactivateAsync();
+            await base.OnDeactivateAsync(reason, cancellationToken);
+        }
+
+        public Task TellOneWay(IEntityMessage message)
+        {
+            return Tell(message);
         }
 
         public void Destroy()
@@ -73,7 +81,7 @@ namespace MineCase.Engine
                     await Tell(BeforeWriteState.Default);
                     var state = new DependencyObjectState
                     {
-                        GrainKeyString = GrainReference.ToKeyString(),
+                        GrainKeyString = this.GetGrainId().ToString(),
                         ValueStorage = _valueStorage
                     };
 
@@ -117,12 +125,15 @@ namespace MineCase.Engine
 
         public IAsyncStream<T> GetStream<T>(string providerName, Guid streamId, string streamNamespace)
         {
-            return GetStreamProvider(providerName).GetStream<T>(streamId, streamNamespace);
+            return this.GetStreamProvider(providerName).GetStream<T>(streamNamespace, streamId);
         }
 
         public new IDisposable RegisterTimer(Func<object, Task> callback, object state, TimeSpan dueTime, TimeSpan period)
         {
-            return base.RegisterTimer(callback, state, dueTime, period);
+            return this.RegisterGrainTimer<object>(
+                (s, _) => callback(s),
+                state,
+                new GrainTimerCreationOptions { DueTime = dueTime, Period = period, Interleave = true, KeepAlive = false });
         }
     }
 }

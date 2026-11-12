@@ -207,7 +207,7 @@ namespace MineCase.Serialization
             NbtCompound nbt;
             using (MemoryStream ms = new MemoryStream(_span.ToArray()))
             {
-                using (var br = new BinaryReader(ms, Encoding.UTF8, false))
+                using (var br = new BinaryReader(ms, Encoding.UTF8, true))
                 {
                     nbt = NbtTagSerializer.DeserializeTag<NbtCompound>(br);
                 }

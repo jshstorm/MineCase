@@ -17,9 +17,9 @@ namespace MineCase
 
         public async Task LoadRecipes(StreamReader streamReader)
         {
-            while (!streamReader.EndOfStream)
+            string line;
+            while ((line = await streamReader.ReadLineAsync()) != null)
             {
-                var line = await streamReader.ReadLineAsync();
                 ParseLine(line);
             }
         }

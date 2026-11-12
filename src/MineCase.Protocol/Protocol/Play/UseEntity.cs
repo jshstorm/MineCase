@@ -3,27 +3,35 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MineCase.Serialization;
+using Orleans;
 
 namespace MineCase.Protocol.Play
 {
+    [GenerateSerializer]
     [Packet(0x0A)]
     public sealed class UseEntity : IPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.VarInt)]
         public int Target;
 
+        [Id(1)]
         [SerializeAs(DataType.VarInt)]
         public int Type;
 
+        [Id(2)]
         [SerializeAs(DataType.Float)]
         public float? TargetX;
 
+        [Id(3)]
         [SerializeAs(DataType.Float)]
         public float? TargetY;
 
+        [Id(4)]
         [SerializeAs(DataType.Float)]
         public float? TargetZ;
 
+        [Id(5)]
         [SerializeAs(DataType.VarInt)]
         public int? Hand;
 

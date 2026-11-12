@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Graphics
 {
@@ -97,22 +98,26 @@ namespace MineCase.Graphics
         }
     }
 
+    [GenerateSerializer]
     [Serializable]
     public struct Point3d : IEquatable<Point3d>
     {
         /// <summary>
         /// Gets or sets the positon of X-axis in minecraft world.
         /// </summary>
+        [Id(0)]
         public float X { get; set; }
 
         /// <summary>
         /// Gets or sets the positon of Z-axis in minecraft world.
         /// </summary>
+        [Id(1)]
         public float Z { get; set; }
 
         /// <summary>
         /// Gets or sets the positon of Y-axis in minecraft world.
         /// </summary>
+        [Id(2)]
         public float Y { get; set; }
 
         public Point3d(float x, float z, float y)

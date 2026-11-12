@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using MineCase.Engine;
@@ -62,9 +63,9 @@ namespace MineCase.Server.Game.Entities
             SetComponent(new DeathComponent());
         }
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
-            await base.OnActivateAsync();
+            await base.OnActivateAsync(cancellationToken);
             this.SetLocalValue(HealthComponent.MaxHealthProperty, 20);
             this.SetLocalValue(FoodComponent.MaxFoodProperty, 20);
             this.SetLocalValue(HealthComponent.HealthProperty, GetValue(HealthComponent.MaxHealthProperty));

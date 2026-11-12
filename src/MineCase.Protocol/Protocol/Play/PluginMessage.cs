@@ -3,16 +3,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MineCase.Serialization;
+using Orleans;
 
 namespace MineCase.Protocol.Play
 {
-    [Packet(0x0A)]
     [GenerateSerializer]
+    [Packet(0x0A)]
+    [GeneratePacketSerializer]
     public sealed partial class ServerboundPluginMessage : IPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.String)]
         public string Channel;
 
+        [Id(1)]
         [SerializeAs(DataType.ByteArray)]
         public byte[] Data;
     }

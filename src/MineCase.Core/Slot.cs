@@ -2,21 +2,27 @@
 using System.Collections.Generic;
 using System.Text;
 using MineCase.Nbt;
+using Orleans;
 
 namespace MineCase
 {
+    [GenerateSerializer]
     public struct Slot : IEquatable<Slot>
     {
         public static Slot Empty { get; } = new Slot { BlockId = -1 };
 
         public bool IsEmpty => BlockId == -1;
 
+        [Id(0)]
         public short BlockId { get; set; }
 
+        [Id(1)]
         public byte ItemCount { get; set; }
 
+        [Id(2)]
         public short ItemDamage { get; set; }
 
+        [Id(3)]
         public NbtFile NBT { get; set; }
 
         public bool CanStack(Slot slot)

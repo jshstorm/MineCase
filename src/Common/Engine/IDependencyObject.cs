@@ -14,6 +14,7 @@ namespace MineCase.Engine
     /// </summary>
     /// <typeparam name="TResponse">回复类型</typeparam>
 #if ECS_SERVER
+    [GenerateSerializer]
     [Immutable]
 #endif
     public sealed class AskResult<TResponse>
@@ -26,11 +27,17 @@ namespace MineCase.Engine
         /// <summary>
         /// 是否成功
         /// </summary>
+#if ECS_SERVER
+        [Id(0)]
+#endif
         public bool Succeeded;
 
         /// <summary>
         /// 回复
         /// </summary>
+#if ECS_SERVER
+        [Id(1)]
+#endif
         public TResponse Response;
     }
 
@@ -52,6 +59,16 @@ namespace MineCase.Engine
         void
 #endif
             Tell(IEntityMessage message);
+
+#if ECS_SERVER
+        /// <summary>
+        /// 单向通知
+        /// </summary>
+        /// <param name="message">消息</param>
+        /// <returns>任务</returns>
+        [OneWay]
+        Task TellOneWay(IEntityMessage message);
+#endif
 
         /// <summary>
         /// 询问

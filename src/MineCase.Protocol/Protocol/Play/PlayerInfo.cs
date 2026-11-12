@@ -3,27 +3,34 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using MineCase.Serialization;
+using Orleans;
 
 namespace MineCase.Protocol.Play
 {
     // In 1.12, it is PlayerListItem. Now it is PlayerInfo
-    [Packet(0x34)]
     [GenerateSerializer]
+    [Packet(0x34)]
+    [GeneratePacketSerializer]
     public sealed partial class PlayerInfo<TAction> : IPacket
         where TAction : PlayerInfoAction, new()
     {
+        [Id(0)]
         [SerializeAs(DataType.VarInt)]
         public uint Action;
 
+        [Id(1)]
         [SerializeAs(DataType.VarInt)]
         public uint NumberOfPlayers;
 
+        [Id(2)]
         [SerializeAs(DataType.Array, ArrayLengthMember = nameof(NumberOfPlayers))]
         public TAction[] Players;
     }
 
+    [GenerateSerializer]
     public abstract partial class PlayerInfoAction : IPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.UUID)]
         public Guid UUID;
 
@@ -38,23 +45,30 @@ namespace MineCase.Protocol.Play
         }
     }
 
+    [GenerateSerializer]
     public sealed partial class PlayerInfoAddPlayerAction : PlayerInfoAction
     {
+        [Id(0)]
         [SerializeAs(DataType.String)]
         public string Name;
 
+        [Id(1)]
         [SerializeAs(DataType.VarInt)]
         public uint NumberOfProperties;
 
+        [Id(2)]
         [SerializeAs(DataType.VarInt)]
         public uint GameMode;
 
+        [Id(3)]
         [SerializeAs(DataType.VarInt)]
         public uint Ping;
 
+        [Id(4)]
         [SerializeAs(DataType.Boolean)]
         public bool HasDisplayName;
 
+        [Id(5)]
         [SerializeAs(DataType.Chat)]
         public string DisplayName;
 
@@ -77,6 +91,7 @@ namespace MineCase.Protocol.Play
         }
     }
 
+    [GenerateSerializer]
     public sealed class PlayerInfoRemovePlayerAction : PlayerInfoAction
     {
     }

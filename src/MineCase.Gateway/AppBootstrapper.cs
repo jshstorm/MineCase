@@ -13,7 +13,11 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Orleans;
+using Orleans.Configuration;
+using Orleans.Hosting;
 using Microsoft.Extensions.Hosting;
 
 namespace MineCase.Gateway
@@ -27,26 +31,31 @@ namespace MineCase.Gateway
             services.AddSingleton<IPacketCompress, PacketCompress>();
             services.AddTransient<ClientSession>();
             services.AddHostedService<ConnectionRouter>();
-            services.AddOrleansMultiClient(builder =>
-            {
-                builder.AddClient(options =>
+
+            ConfigureObjectPools(services);
+        }
+
+        private static void ConfigureOrleansClient(HostBuilderContext context, IClientBuilder builder)
+        {
+            builder.Configure<ClusterOptions>(options =>
                 {
                     options.ClusterId = "dev";
                     options.ServiceId = "MineCaseService";
-                    options.Configure = c =>
-                    {
-                        // c.UseLocalhostClustering(gatewayPort: 30000);
-                        c.UseMongoDBClient(context.Configuration.GetSection("persistenceOptions")["connectionString"]);
-                        c.UseMongoDBClustering(options =>
-                        {
-                            options.DatabaseName = context.Configuration.GetSection("persistenceOptions")["databaseName"];
-                        });
-                    };
-                    options.SetServiceAssembly(SelectAssemblies());
-                });
-            });
+                })
+                // .UseLocalhostClustering(gatewayPort: 30000)
+                .UseMongoDBClient(context.Configuration.GetSection("persistenceOptions")["connectionString"])
+                .UseMongoDBClustering(options =>
+                {
+                    options.DatabaseName = context.Configuration.GetSection("persistenceOptions")["databaseName"];
+                })
+                .UseConnectionRetryFilter(RetryConnectToCluster);
+        }
 
-            ConfigureObjectPools(services);
+        private static async Task<bool> RetryConnectToCluster(Exception exception, CancellationToken cancellationToken)
+        {
+            Console.WriteLine($"Failed to connect to the MineCase cluster, retrying in 5 seconds: {exception.Message}");
+            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            return true;
         }
 
         private static void ConfigureObjectPools(IServiceCollection services)
@@ -69,14 +78,6 @@ namespace MineCase.Gateway
         private static void ConfigureLogging(ILoggingBuilder loggingBuilder)
         {
             loggingBuilder.AddConsole();
-        }
-
-        private static Assembly[] SelectAssemblies()
-        {
-            var assemblies = new List<Assembly>();
-            assemblies
-                .AddInterfaces();
-            return assemblies.ToArray();
         }
     }
 }

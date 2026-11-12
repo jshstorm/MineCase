@@ -13,33 +13,27 @@ namespace MineCase.Serialization.Serializers
     public class GrainRerferenceSerializer<TInterface> : SealedClassSerializerBase<TInterface>
         where TInterface : class, IAddressable
     {
-        private IGrainReferenceConverter _grainReferenceConverter;
         private IGrainFactory _grainFactory;
 
         public GrainRerferenceSerializer(IServiceProvider serviceProvider)
         {
-            _grainReferenceConverter = serviceProvider.GetRequiredService<IGrainReferenceConverter>();
             _grainFactory = serviceProvider.GetRequiredService<IGrainFactory>();
         }
 
         protected override void SerializeValue(BsonSerializationContext context, BsonSerializationArgs args, TInterface value)
         {
-            var refer = (GrainReference)(object)value;
-            var key = refer.ToKeyString();
+            var key = value.GetGrainId().ToString();
             context.Writer.WriteString(key);
         }
 
         protected override TInterface DeserializeValue(BsonDeserializationContext context, BsonDeserializationArgs args)
         {
             var key = context.Reader.ReadString();
-            var refer = _grainReferenceConverter.GetGrainFromKeyString(key);
-            if (refer != null)
-            {
-                refer.BindGrainReference(_grainFactory);
-                return refer.AsReference<TInterface>();
-            }
+            var grainId = GrainId.Parse(key);
+            if (grainId.IsDefault)
+                return null;
 
-            return null;
+            return _grainFactory.GetGrain(grainId).AsReference<TInterface>();
         }
     }
 

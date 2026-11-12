@@ -14,7 +14,7 @@ namespace MineCase.Serialization
     }
 
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public sealed class GenerateSerializerAttribute : Attribute
+    public sealed class GeneratePacketSerializerAttribute : Attribute
     {
         public GenerateSerializerMethods Methods { get; set; } = GenerateSerializerMethods.Both;
     }

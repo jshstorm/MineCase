@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using MineCase.Buffers;
 using MineCase.Serialization;
-using SharpCompress.Compressors;
-using SharpCompress.Compressors.Deflate;
 
 namespace MineCase.Protocol
 {
@@ -27,12 +26,12 @@ namespace MineCase.Protocol
 
             var targetPacket = new UncompressedPacket();
             using (var stream = new MemoryStream(packet.CompressedData))
-            using (var br = new BinaryReader(useCompression ? (Stream)new ZlibStream(stream, CompressionMode.Decompress, CompressionLevel.BestSpeed) : stream))
+            using (var br = new BinaryReader(useCompression ? (Stream)new ZLibStream(stream, CompressionMode.Decompress) : stream))
             {
                 targetPacket.PacketId = br.ReadAsVarInt(out var packetIdLen);
 
                 targetPacket.Data = new byte[dataLength - packetIdLen];
-                br.Read(targetPacket.Data.Array, targetPacket.Data.Offset, targetPacket.Data.Count);
+                br.BaseStream.ReadExactly(targetPacket.Data.Array, targetPacket.Data.Offset, targetPacket.Data.Count);
             }
 
             targetPacket.Length = packet.DataLength;
@@ -48,7 +47,7 @@ namespace MineCase.Protocol
                 bool useCompression = dataLength >= threshold;
                 targetPacket.DataLength = useCompression ? dataLength : 0;
 
-                using (var bw = new BinaryWriter(useCompression ? (Stream)new ZlibStream(stream, CompressionMode.Compress, CompressionLevel.BestSpeed) : stream))
+                using (var bw = new BinaryWriter(useCompression ? (Stream)new ZLibStream(stream, CompressionLevel.Fastest) : stream))
                 {
                     bw.WriteAsVarInt(packet.PacketId, out _);
                     bw.Write(packet.Data.Array, packet.Data.Offset, packet.Data.Count);

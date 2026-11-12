@@ -6,16 +6,19 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using MineCase.Nbt.Serialization;
+using Orleans;
 
 namespace MineCase.Nbt.Tags
 {
     /// <see cref="NbtTagType.Compound"/>
+    [GenerateSerializer]
     public sealed class NbtCompound : NbtTag, IEnumerable<NbtTag>
     {
         public override NbtTagType TagType => NbtTagType.Compound;
 
         public override bool HasValue => false;
 
+        [Id(0)]
         private readonly Dictionary<string, NbtTag> _childTags;
 
         /// <summary>

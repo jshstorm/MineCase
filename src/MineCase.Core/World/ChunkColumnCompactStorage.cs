@@ -6,6 +6,7 @@ using MineCase.Block;
 using MineCase.Nbt;
 using MineCase.Nbt.Tags;
 using MineCase.World.Biomes;
+using Orleans;
 
 namespace MineCase.World
 {
@@ -21,18 +22,19 @@ namespace MineCase.World
         public const int BlocksInChunk = BlocksInSection * SectionsPerChunk;
     }
 
+    [GenerateSerializer]
     public sealed class ChunkColumnCompactStorage : IChunkColumnStorage
     {
         public uint SectionBitMask
         {
             get
             {
+                // Bit n marks section n, counting from the bottom of the column.
                 uint mask = 0;
-                int index = 0;
-                while (index < ChunkConstants.SectionsPerChunk)
+                for (int index = 0; index < ChunkConstants.SectionsPerChunk; index++)
                 {
-                    mask <<= 1;
-                    mask |= Sections[index++] != null ? 1u : 0;
+                    if (Sections[index] != null)
+                        mask |= 1u << index;
                 }
 
                 return mask;
@@ -73,10 +75,13 @@ namespace MineCase.World
             }
         }
 
+        [Id(0)]
         public ChunkSectionCompactStorage[] Sections { get; } = new ChunkSectionCompactStorage[ChunkConstants.SectionsPerChunk];
 
+        [Id(1)]
         public int[,] GroundHeight { get; } = new int[ChunkConstants.BlockEdgeWidthInSection, ChunkConstants.BlockEdgeWidthInSection];
 
+        [Id(2)]
         public int[] Biomes { get; }
 
         public BlockState this[int x, int y, int z]
@@ -100,19 +105,24 @@ namespace MineCase.World
         }
     }
 
+    [GenerateSerializer]
     public sealed class ChunkSectionCompactStorage
     {
         private const byte _bitsPerBlock = 14;
         public const ulong BlockMask = (1u << _bitsPerBlock) - 1;
 
+        [Id(0)]
         private short _nonAirBlockCount = 4096; // FIXME: count block non air
 
         public byte BitsPerBlock => _bitsPerBlock;
 
+        [Id(1)]
         public DataArray Data { get; }
 
+        [Id(2)]
         public NibbleArray BlockLight { get; }
 
+        [Id(3)]
         public NibbleArray SkyLight { get; }
 
         public short NonAirBlockCount { get => _nonAirBlockCount; }
@@ -132,8 +142,10 @@ namespace MineCase.World
             SkyLight = skyLight;
         }
 
+        [GenerateSerializer]
         public sealed class DataArray
         {
+            [Id(0)]
             public ulong[] Storage { get; }
 
             public BlockState this[int x, int y, int z]
@@ -190,8 +202,10 @@ namespace MineCase.World
             }
         }
 
+        [GenerateSerializer]
         public sealed class NibbleArray
         {
+            [Id(0)]
             public byte[] Storage { get; }
 
             public byte this[int x, int y, int z]

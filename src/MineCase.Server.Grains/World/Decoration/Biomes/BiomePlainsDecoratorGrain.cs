@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MineCase.Block;
 using MineCase.Server.Game.Entities;
@@ -19,7 +20,7 @@ namespace MineCase.Server.World.Decoration.Biomes
     [StatelessWorker]
     public class BiomePlainsDecoratorGrain : BiomeDecoratorGrain, IBiomePlainsDecorator
     {
-        public override Task OnActivateAsync()
+        public override Task OnActivateAsync(CancellationToken cancellationToken)
         {
             if (this.GetPrimaryKeyLong() == (long)BiomeId.Plains)
             {

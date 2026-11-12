@@ -2,7 +2,7 @@ version: '3'
 
 services:
   minecase.persistdb:
-    image: "mongo:3.4.10"
+    image: "mongo:8.0"
 
   minecase.server:
     image: "sunnycase/minecase.server:ci-latest-nanoserver"

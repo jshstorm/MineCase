@@ -28,11 +28,11 @@ namespace MineCase.Server.Network.Play
 
         public Task SendPacket(uint packetId, Immutable<byte[]> data)
         {
-            _player.InvokeOneWay(e => e.Tell(new PacketForwardToPlayer
+            _ = _player.TellOneWay(new PacketForwardToPlayer
             {
                 PacketId = packetId,
                 Data = data.Value
-            }));
+            });
             return Task.CompletedTask;
         }
     }

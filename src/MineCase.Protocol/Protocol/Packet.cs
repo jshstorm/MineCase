@@ -6,17 +6,22 @@ using System.Text;
 using System.Threading.Tasks;
 using MineCase.Buffers;
 using MineCase.Serialization;
+using Orleans;
 
 namespace MineCase.Protocol
 {
+    [GenerateSerializer]
     public class UncompressedPacket
     {
+        [Id(0)]
         [SerializeAs(DataType.VarInt)]
         public uint Length;
 
+        [Id(1)]
         [SerializeAs(DataType.VarInt)]
         public uint PacketId;
 
+        [Id(2)]
         [SerializeAs(DataType.ByteArray)]
         public ArraySegment<byte> Data;
 
@@ -34,14 +39,19 @@ namespace MineCase.Protocol
             await stream.WriteAsync(Data.Array, Data.Offset, Data.Count);
         }
 
-        public static async Task<UncompressedPacket> DeserializeAsync(Stream stream, IBufferPoolScope<byte> bufferPool, UncompressedPacket packet = null)
+        public static Task<UncompressedPacket> DeserializeAsync(Stream stream, IBufferPoolScope<byte> bufferPool, UncompressedPacket packet = null)
+        {
+            return DeserializeAsync(stream, Protocol.ReadPacketLength(stream), bufferPool, packet);
+        }
+
+        public static async Task<UncompressedPacket> DeserializeAsync(Stream stream, uint length, IBufferPoolScope<byte> bufferPool, UncompressedPacket packet = null)
         {
             packet = packet ?? new UncompressedPacket();
+            packet.Length = length;
+            Protocol.ValidatePacketLength(packet.Length);
             int packetIdLen;
             using (var br = new BinaryReader(stream, Encoding.UTF8, true))
             {
-                packet.Length = br.ReadAsVarInt(out _);
-                Protocol.ValidatePacketLength(packet.Length);
                 packet.PacketId = br.ReadAsVarInt(out packetIdLen);
             }
 
@@ -76,14 +86,19 @@ namespace MineCase.Protocol
             await stream.WriteAsync(CompressedData, 0, CompressedData.Length);
         }
 
-        public static async Task<CompressedPacket> DeserializeAsync(Stream stream, CompressedPacket packet = null)
+        public static Task<CompressedPacket> DeserializeAsync(Stream stream, CompressedPacket packet = null)
+        {
+            return DeserializeAsync(stream, Protocol.ReadPacketLength(stream), packet);
+        }
+
+        public static async Task<CompressedPacket> DeserializeAsync(Stream stream, uint packetLength, CompressedPacket packet = null)
         {
             packet = packet ?? new CompressedPacket();
+            packet.PacketLength = packetLength;
+            Protocol.ValidatePacketLength(packet.PacketLength);
             int dataLengthLen;
             using (var br = new BinaryReader(stream, Encoding.UTF8, true))
             {
-                packet.PacketLength = br.ReadAsVarInt(out _);
-                Protocol.ValidatePacketLength(packet.PacketLength);
                 packet.DataLength = br.ReadAsVarInt(out dataLengthLen);
             }
 

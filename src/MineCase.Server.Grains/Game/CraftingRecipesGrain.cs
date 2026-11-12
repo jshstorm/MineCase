@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -31,7 +32,7 @@ namespace MineCase.Server.Game
             return Task.FromResult(_recipeMatcher.FindRecipe(craftingGrid.Value));
         }
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             var file = _fileProvider.GetFileInfo(_recipesFileName);
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.FileProviders;
 using MineCase.Algorithm;
@@ -23,7 +24,7 @@ namespace MineCase.Server.Game
             _fileProvider = new PhysicalFileProvider(AppContext.BaseDirectory);
         }
 
-        public override async Task OnActivateAsync()
+        public override async Task OnActivateAsync(CancellationToken cancellationToken)
         {
             var file = _fileProvider.GetFileInfo(_recipesFileName);
 

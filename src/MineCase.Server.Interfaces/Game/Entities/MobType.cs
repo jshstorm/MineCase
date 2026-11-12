@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Server.Game.Entities
 {
+    [GenerateSerializer]
     public enum MobType : byte
     {
         Item = 1,

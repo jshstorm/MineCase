@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Orleans;
 
 namespace MineCase.Graphics
 {
@@ -9,6 +10,7 @@ namespace MineCase.Graphics
         Cuboid = 0
     }
 
+    [GenerateSerializer]
     [Serializable]
     public abstract class Shape
     {
