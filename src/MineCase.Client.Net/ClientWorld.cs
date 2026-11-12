@@ -28,6 +28,9 @@ namespace MineCase.Client.Net
             return column.GetBlock(x & 15, y, z & 15);
         }
 
+        public ushort GetState(int x, int y, int z) =>
+            _columns.TryGetValue((x >> 4, z >> 4), out var column) ? column.GetState(x & 15, y, z & 15) : (ushort)0;
+
         public static int ToChunkCoordinate(double blockCoordinate) => (int)Math.Floor(blockCoordinate / ChunkColumn.EdgeWidth);
     }
 }

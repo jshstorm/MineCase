@@ -90,10 +90,11 @@ namespace MineCase.UnitTest
         {
             var mesh = BuildSingleSection((1, 1, 1, BlockId.Water), (2, 1, 1, BlockId.Water));
 
+            // Ten outer faces plus the underside of the two surface quads.
             Assert.True(mesh.Opaque.IsEmpty);
-            Assert.Equal(10 * 4, mesh.Translucent.Positions.Count);
+            Assert.Equal(12 * 4, mesh.Translucent.Positions.Count);
             Assert.Empty(mesh.CollisionTriangles);
-            Assert.All(mesh.Translucent.Positions, p => Assert.True(p.Y <= 1.875f));
+            Assert.All(mesh.Translucent.Positions, p => Assert.True(p.Y <= 1 + (8f / 9) + 1e-5f));
         }
 
         [Fact]
@@ -129,10 +130,10 @@ namespace MineCase.UnitTest
 
         private static ChunkColumn CreateColumn(int chunkX, int chunkZ, params (int X, int Y, int Z, BlockId Id)[] blocks)
         {
-            var sections = new BlockId[ChunkColumn.SectionCount][];
-            sections[0] = new BlockId[ChunkColumn.SectionVolume];
+            var sections = new ushort[ChunkColumn.SectionCount][];
+            sections[0] = new ushort[ChunkColumn.SectionVolume];
             foreach (var block in blocks)
-                sections[0][ChunkColumn.Index(block.X, block.Y, block.Z)] = block.Id;
+                sections[0][ChunkColumn.Index(block.X, block.Y, block.Z)] = (ushort)block.Id;
             return new ChunkColumn(chunkX, chunkZ, sections);
         }
 

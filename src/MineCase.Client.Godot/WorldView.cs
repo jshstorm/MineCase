@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using MineCase.Client.Net;
+using MineCase.Client.Net.Rendering;
 using NVector3 = System.Numerics.Vector3;
 using NVector4 = System.Numerics.Vector4;
 
@@ -15,7 +16,9 @@ namespace MineCase.GodotClient
         private readonly Dictionary<(int X, int Z), Node3D> _columnNodes = new Dictionary<(int X, int Z), Node3D>();
         private readonly HashSet<(int X, int Z)> _dirty = new HashSet<(int X, int Z)>();
         private readonly Dictionary<(int X, int Z), int> _triangles = new Dictionary<(int X, int Z), int>();
+        private IBlockModels _models = FlatColorBlockModels.Instance;
         private StandardMaterial3D _opaqueMaterial;
+        private StandardMaterial3D _cutoutMaterial;
         private StandardMaterial3D _translucentMaterial;
 
         public ClientWorld World { get; } = new ClientWorld();
@@ -26,21 +29,38 @@ namespace MineCase.GodotClient
 
         public override void _Ready()
         {
-            _opaqueMaterial = new StandardMaterial3D
-            {
-                VertexColorUseAsAlbedo = true,
-                VertexColorIsSrgb = true,
-                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-            };
-            _translucentMaterial = new StandardMaterial3D
-            {
-                VertexColorUseAsAlbedo = true,
-                VertexColorIsSrgb = true,
-                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-                Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
-                CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-            };
+            if (_opaqueMaterial == null)
+                SetModels(_models);
         }
+
+        /// <summary>
+        /// Switches block appearance (flat colours or a resource pack) and rebuilds every loaded column.
+        /// </summary>
+        /// <param name="models">Block models and their texture atlas.</param>
+        public void SetModels(IBlockModels models)
+        {
+            _models = models;
+            var atlas = models.Atlas;
+            var image = Image.CreateFromData(atlas.Width, atlas.Height, false, Image.Format.Rgba8, atlas.Pixels);
+            image.GenerateMipmaps();
+            var texture = ImageTexture.CreateFromImage(image);
+            _opaqueMaterial = CreateMaterial(texture, BaseMaterial3D.TransparencyEnum.Disabled);
+            _cutoutMaterial = CreateMaterial(texture, BaseMaterial3D.TransparencyEnum.AlphaScissor);
+            _translucentMaterial = CreateMaterial(texture, BaseMaterial3D.TransparencyEnum.Alpha);
+            foreach (var column in World.Columns)
+                _dirty.Add((column.ChunkX, column.ChunkZ));
+        }
+
+        private static StandardMaterial3D CreateMaterial(Texture2D atlas, BaseMaterial3D.TransparencyEnum transparency) => new StandardMaterial3D
+        {
+            AlbedoTexture = atlas,
+            TextureFilter = BaseMaterial3D.TextureFilterEnum.NearestWithMipmaps,
+            VertexColorUseAsAlbedo = true,
+            VertexColorIsSrgb = true,
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
+            Transparency = transparency,
+            AlphaScissorThreshold = 0.5f,
+        };
 
         public void AddColumn(ChunkColumn column)
         {
@@ -108,15 +128,16 @@ namespace MineCase.GodotClient
             };
             for (var sectionY = 0; sectionY < ChunkColumn.SectionCount; sectionY++)
             {
-                var mesh = ChunkMesher.BuildSection(World, column, sectionY);
+                var mesh = ChunkMesher.BuildSection(World, column, sectionY, _models);
                 if (mesh.IsEmpty)
                     continue;
 
-                triangles += (mesh.Opaque.Indices.Count + mesh.Translucent.Indices.Count) / 3;
+                triangles += (mesh.Opaque.Indices.Count + mesh.Cutout.Indices.Count + mesh.Translucent.Indices.Count) / 3;
 
                 var sectionNode = new Node3D { Position = new Vector3(0, sectionY * ChunkColumn.EdgeWidth, 0) };
                 var arrayMesh = new ArrayMesh();
                 AddSurface(arrayMesh, mesh.Opaque, _opaqueMaterial);
+                AddSurface(arrayMesh, mesh.Cutout, _cutoutMaterial);
                 AddSurface(arrayMesh, mesh.Translucent, _translucentMaterial);
                 sectionNode.AddChild(new MeshInstance3D { Mesh = arrayMesh });
 
@@ -152,6 +173,7 @@ namespace MineCase.GodotClient
             arrays.Resize((int)Mesh.ArrayType.Max);
             arrays[(int)Mesh.ArrayType.Vertex] = data.Positions.Select(ToGodot).ToArray();
             arrays[(int)Mesh.ArrayType.Normal] = data.Normals.Select(ToGodot).ToArray();
+            arrays[(int)Mesh.ArrayType.TexUV] = data.Uvs.Select(uv => new Vector2(uv.X, uv.Y)).ToArray();
             arrays[(int)Mesh.ArrayType.Color] = data.Colors.Select(ToGodot).ToArray();
             arrays[(int)Mesh.ArrayType.Index] = indices;
             target.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);

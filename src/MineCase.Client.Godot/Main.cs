@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Godot;
 using MineCase.Client.Net;
+using MineCase.Client.Net.Rendering;
 
 namespace MineCase.GodotClient
 {
     /// <summary>
     /// Connect screen, HUD and the glue between <see cref="MinecraftClient"/> events and the scene.
     /// Command line (after "--"): --host H --port P --name N --view-distance D --autoconnect --fly
-    /// --offset-y DY --look-pitch DEGREES --screenshot PATH --screenshot-after SECONDS (saves the frame and quits).
+    /// --offset-y DY --look-pitch DEGREES --look-yaw DEGREES --screenshot PATH --screenshot-after SECONDS (saves the frame and quits)
+    /// --resource-pack PATHS (folders, .zip or a 1.15.2 client .jar, separated like PATH; later ones win).
     /// </summary>
     public partial class Main : Node3D
     {
@@ -25,6 +27,8 @@ namespace MineCase.GodotClient
         private LineEdit _hostEdit;
         private LineEdit _portEdit;
         private LineEdit _nameEdit;
+        private LineEdit _packEdit;
+        private string _loadedPacks = string.Empty;
         private Button _connectButton;
         private Label _menuStatus;
         private Label _hud;
@@ -85,9 +89,12 @@ namespace MineCase.GodotClient
             _client?.Dispose();
         }
 
-        private void Connect()
+        private void Connect() => _ = ConnectWithResourcePacksAsync();
+
+        private async Task ConnectWithResourcePacksAsync()
         {
             _client?.Dispose();
+            _client = null;
             _lastError = null;
             var host = _hostEdit.Text.Trim();
             if (!int.TryParse(_portEdit.Text.Trim(), out var port))
@@ -96,12 +103,72 @@ namespace MineCase.GodotClient
                 return;
             }
 
+            _connectButton.Disabled = true;
+            if (!await LoadResourcePacksAsync(_packEdit.Text))
+            {
+                _connectButton.Disabled = false;
+                return;
+            }
+
             _client = new MinecraftClient(host, port, _nameEdit.Text.Trim(), _viewDistance);
             if (_args.ContainsKey("trace"))
                 _client.Trace = line => GD.Print($"[net {Time.GetTicksMsec() / 1000.0:F2}s] {line}");
-            _connectButton.Disabled = true;
             _menuStatus.Text = $"{host}:{port} 에 접속하는 중...";
-            _ = ConnectAsync(_client);
+            await ConnectAsync(_client);
+        }
+
+        /// <summary>
+        /// Loads the packs in the menu field once; an empty field means flat colours.
+        /// </summary>
+        /// <param name="text">Pack paths separated like PATH.</param>
+        /// <returns>False when a pack could not be read.</returns>
+        private async Task<bool> LoadResourcePacksAsync(string text)
+        {
+            text = text.Trim();
+            if (text == _loadedPacks)
+                return true;
+            if (text.Length == 0)
+            {
+                _world.SetModels(FlatColorBlockModels.Instance);
+                _loadedPacks = text;
+                return true;
+            }
+
+            _menuStatus.Text = "리소스팩을 읽는 중...";
+            try
+            {
+                var paths = text.Split(System.IO.Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var models = await Task.Run(() =>
+                {
+                    using var packs = ResourcePackStack.Open(paths);
+                    return ResourcePackBlockModels.Load(packs);
+                });
+                foreach (var problem in models.Problems)
+                    GD.Print("[resource pack] " + problem);
+                GD.Print($"Resource packs loaded: {models.Atlas.SpriteCount} textures in a {models.Atlas.Width}x{models.Atlas.Height} atlas");
+                _world.SetModels(models);
+                _loadedPacks = text;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                GD.PrintErr("Resource pack failed: " + ex);
+                _menuStatus.Text = "리소스팩을 읽지 못했습니다: " + ex.Message;
+                return false;
+            }
+        }
+
+        private static string FindInstalledClientJar()
+        {
+            var home = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
+            var appData = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData);
+            var candidates = new[]
+            {
+                System.IO.Path.Combine(appData, ".minecraft", "versions", "1.15.2", "1.15.2.jar"),
+                System.IO.Path.Combine(home, "Library", "Application Support", "minecraft", "versions", "1.15.2", "1.15.2.jar"),
+                System.IO.Path.Combine(home, ".minecraft", "versions", "1.15.2", "1.15.2.jar"),
+            };
+            return Array.Find(candidates, System.IO.File.Exists) ?? string.Empty;
         }
 
         private async Task ConnectAsync(MinecraftClient client)
@@ -153,8 +220,10 @@ namespace MineCase.GodotClient
                         Input.MouseMode = Input.MouseModeEnum.Captured;
                         break;
                     case TeleportEvent teleport:
-                        var pitch = !_spawned && _args.TryGetValue("look-pitch", out var lookPitch) && float.TryParse(lookPitch, out var p) ? p : teleport.Pitch;
-                        _player.Teleport(new Vector3((float)teleport.X, (float)teleport.Y, (float)teleport.Z), teleport.Yaw, pitch);
+                        // The server teleports more than once while joining, so a fixed view (for screenshots) is applied every time.
+                        var pitch = _args.TryGetValue("look-pitch", out var lookPitch) && float.TryParse(lookPitch, out var p) ? p : teleport.Pitch;
+                        var yaw = _args.TryGetValue("look-yaw", out var lookYaw) && float.TryParse(lookYaw, out var y) ? y : teleport.Yaw;
+                        _player.Teleport(new Vector3((float)teleport.X, (float)teleport.Y, (float)teleport.Z), yaw, pitch);
                         if (!_spawned && _args.TryGetValue("offset-y", out var offset) && float.TryParse(offset, out var dy))
                             _player.GlobalPosition += new Vector3(0, dy, 0);
                         _spawned = true;
@@ -233,14 +302,26 @@ namespace MineCase.GodotClient
 
         private void BuildEnvironment()
         {
-            var sky = new Sky { SkyMaterial = new ProceduralSkyMaterial() };
+            // Daytime plains sky and fog colours of the game.
+            var skyColor = new Color(0.47f, 0.65f, 1.0f);
+            var horizonColor = new Color(0.75f, 0.85f, 1.0f);
+            var sky = new Sky
+            {
+                SkyMaterial = new ProceduralSkyMaterial
+                {
+                    SkyTopColor = skyColor,
+                    SkyHorizonColor = horizonColor,
+                    GroundHorizonColor = horizonColor,
+                    GroundBottomColor = new Color(0.16f, 0.2f, 0.3f),
+                },
+            };
             var environment = new Godot.Environment
             {
                 BackgroundMode = Godot.Environment.BGMode.Sky,
                 Sky = sky,
                 AmbientLightSource = Godot.Environment.AmbientSource.Sky,
                 FogEnabled = true,
-                FogLightColor = new Color(0.72f, 0.82f, 0.95f),
+                FogLightColor = horizonColor,
                 FogDensity = 0.006f,
             };
             AddChild(new WorldEnvironment { Environment = environment });
@@ -284,6 +365,8 @@ namespace MineCase.GodotClient
             _hostEdit = AddField(box, "서버 주소", _args.GetValueOrDefault("host", "127.0.0.1"));
             _portEdit = AddField(box, "포트", _args.GetValueOrDefault("port", "25565"));
             _nameEdit = AddField(box, "이름", _args.GetValueOrDefault("name", "godot"));
+            _packEdit = AddField(box, "리소스팩", _args.GetValueOrDefault("resource-pack", FindInstalledClientJar()));
+            _packEdit.PlaceholderText = "비우면 단색 블록 (1.15.2 client.jar, 폴더, zip)";
             _connectButton = new Button { Text = "접속" };
             _connectButton.Pressed += Connect;
             box.AddChild(_connectButton);

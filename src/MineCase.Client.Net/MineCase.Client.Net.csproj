@@ -19,6 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Rendering\BlockStates115.txt" LogicalName="MineCase.Client.Net.BlockStates115.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MineCase.Core\MineCase.Core.csproj" />
     <ProjectReference Include="..\MineCase.Protocol\MineCase.Protocol.csproj" />
   </ItemGroup>

@@ -39,14 +39,22 @@ It written in `C#` with `.NET 10` env and based on `orleans` 10 framework to wor
     * **Win** : Double-click `build_and_run.bat`.
 
 ## Godot client
-`src/MineCase.Client.Godot` is a small Godot 4 (C#) client for MineCase servers in offline mode. It logs in, draws the chunks the server sends (flat colours per block type, no Minecraft textures), lets you walk or fly around with collision, and reports your position so the server streams the chunks around you. Inventory, entities, chat and block editing are not implemented.
+`src/MineCase.Client.Godot` is a small Godot 4 (C#) client for MineCase servers in offline mode. It logs in, draws the chunks the server sends, lets you walk or fly around with collision, and reports your position so the server streams the chunks around you. Inventory, entities, chat and block editing are not implemented.
 
 * Requires the **.NET** build of [Godot 4.7](https://godotengine.org/download) and the .NET 10 SDK.
 * Start the server and gateway first, then open `src/MineCase.Client.Godot/project.godot` in Godot and press Play, enter the address and click connect.
 * Controls: WASD move, mouse look (click to capture, Esc to release), Space jump, F toggle flying (Space/Shift up/down), Ctrl sprint.
-* Command-line options after `--`: `--host`, `--port`, `--name`, `--view-distance`, `--autoconnect`, `--fly`, `--offset-y`, `--look-pitch`, `--screenshot <png> --screenshot-after <seconds>`, `--trace`.
+* Command-line options after `--`: `--host`, `--port`, `--name`, `--view-distance`, `--autoconnect`, `--fly`, `--offset-y`, `--look-pitch`, `--look-yaw`, `--resource-pack <paths>`, `--screenshot <png> --screenshot-after <seconds>`, `--trace`.
 
-The networking, chunk decoding and meshing live in `src/MineCase.Client.Net`, a plain .NET library that reuses `MineCase.Protocol` and `MineCase.Core` and can be used without Godot (for bots or tests).
+### Textures
+The repository ships no game assets. Without a resource pack, blocks are flat colours. To draw them with textures, put one or more resource packs in the "리소스팩" field (or `--resource-pack`), separated like `PATH` (`;` on Windows); later packs override earlier ones, as in the game:
+
+* your own Minecraft 1.15.2 client jar (`.minecraft/versions/1.15.2/1.15.2.jar`; the field is filled in automatically when it is there), which holds the block states, models and textures, and
+* optionally resource pack folders or `.zip` files on top of it. A pack without block states and models (most texture packs) needs the client jar underneath it; blocks nothing describes stay flat colours.
+
+The client reads block states (variants and multipart), models with parents, element and variant rotations, uvlock, tint indexes (plains grass and foliage colours from the pack's colour maps), and draws them with an atlas, mipmaps, alpha-tested and blended layers, directional face shading and smooth-lighting style ambient occlusion. Animated textures show their first frame, biomes are not read, and blocks the game draws as entities (signs, beds, banners, heads) are left out; chests and shulker boxes are drawn as plain boxes.
+
+The networking, chunk decoding, model loading and meshing live in `src/MineCase.Client.Net`, a plain .NET library that reuses `MineCase.Protocol` and `MineCase.Core` and can be used without Godot (for bots or tests). Its 1.15.2 block state table (`Rendering/BlockStates115.txt`) is generated from [minecraft-data](https://github.com/PrismarineJS/minecraft-data) (MIT License).
 
 The old Unity client in `src/MineCase.Client*` is a 2017 prototype for Minecraft 1.12 and no longer builds.
 
