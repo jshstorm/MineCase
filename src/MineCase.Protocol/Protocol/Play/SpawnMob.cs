@@ -21,8 +21,8 @@ namespace MineCase.Protocol.Play
         public Guid EntityUUID;
 
         [Id(2)]
-        [SerializeAs(DataType.Byte)]
-        public byte Type;
+        [SerializeAs(DataType.VarInt)]
+        public uint Type;
 
         [Id(3)]
         [SerializeAs(DataType.Double)]
@@ -36,13 +36,13 @@ namespace MineCase.Protocol.Play
         [SerializeAs(DataType.Double)]
         public double Z;
 
-        [Id(6)]
-        [SerializeAs(DataType.Angle)]
-        public Angle Pitch;
-
         [Id(7)]
         [SerializeAs(DataType.Angle)]
         public Angle Yaw;
+
+        [Id(6)]
+        [SerializeAs(DataType.Angle)]
+        public Angle Pitch;
 
         [Id(8)]
         [SerializeAs(DataType.Angle)]
@@ -59,9 +59,5 @@ namespace MineCase.Protocol.Play
         [Id(11)]
         [SerializeAs(DataType.Short)]
         public short VelocityZ;
-
-        [Id(12)]
-        [SerializeAs(DataType.ByteArray)]
-        public byte[] Metadata;
     }
 }

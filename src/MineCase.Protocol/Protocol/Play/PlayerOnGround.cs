@@ -8,7 +8,7 @@ namespace MineCase.Protocol.Play
 {
     // FIXME : 1.15.2 does not have this packet
     [GenerateSerializer]
-    [Packet(0x0D)]
+    [Packet(0x14)]
     [GeneratePacketSerializer]
     public sealed partial class PlayerOnGround : IPacket
     {

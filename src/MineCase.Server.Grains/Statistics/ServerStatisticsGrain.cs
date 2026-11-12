@@ -14,7 +14,7 @@ namespace MineCase.Server.Statistics
         private readonly ServerVersion _version = new ServerVersion
         {
             Protocol = Protocol.Protocol.Version,
-            Name = "1.12"
+            Name = Protocol.Protocol.VersionName
         };
 
         public async Task<string> GetDescription()

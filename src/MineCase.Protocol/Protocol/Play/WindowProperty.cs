@@ -8,7 +8,7 @@ using Orleans;
 namespace MineCase.Protocol.Play
 {
     [GenerateSerializer]
-    [Packet(0x15)]
+    [Packet(0x16)]
     [GeneratePacketSerializer]
     public sealed partial class WindowProperty : IPacket
     {

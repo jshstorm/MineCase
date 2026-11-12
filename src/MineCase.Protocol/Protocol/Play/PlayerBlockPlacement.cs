@@ -13,6 +13,10 @@ namespace MineCase.Protocol.Play
     [GeneratePacketSerializer]
     public sealed partial class PlayerBlockPlacement : IPacket
     {
+        [Id(2)]
+        [SerializeAs(DataType.VarInt)]
+        public Hand Hand;
+
         [Id(0)]
         [SerializeAs(DataType.Position)]
         public Position Location;
@@ -20,10 +24,6 @@ namespace MineCase.Protocol.Play
         [Id(1)]
         [SerializeAs(DataType.VarInt)]
         public PlayerDiggingFace Face;
-
-        [Id(2)]
-        [SerializeAs(DataType.VarInt)]
-        public Hand Hand;
 
         [Id(3)]
         [SerializeAs(DataType.Float)]
@@ -36,5 +36,9 @@ namespace MineCase.Protocol.Play
         [Id(5)]
         [SerializeAs(DataType.Float)]
         public float CursorPositionZ;
+
+        [Id(6)]
+        [SerializeAs(DataType.Boolean)]
+        public bool InsideBlock;
     }
 }

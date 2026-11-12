@@ -58,12 +58,11 @@ namespace MineCase.Server.Network.Play
             });
         }
 
-        public Task SpawnMob(uint entityId, Guid uuid, byte entityType, Vector3 position, float pitch, float yaw, Game.Entities.EntityMetadata.Entity metadata)
+        public async Task SpawnMob(uint entityId, Guid uuid, byte entityType, Vector3 position, float pitch, float yaw, Game.Entities.EntityMetadata.Entity metadata)
         {
-            return SendPacket(CreateSpawnMob(entityId, uuid, entityType, position, pitch, yaw, metadata, bw =>
-                 {
-                     WriteEntityMetadata(bw, metadata);
-                 }));
+            // Since 1.15 the spawn packet carries no metadata; it follows as a separate Entity Metadata packet.
+            await SendPacket(CreateSpawnMob(entityId, uuid, entityType, position, pitch, yaw));
+            await SendPacket(CreateEntityMetadata(entityId, metadata, bw => WriteEntityMetadata(bw, metadata)));
         }
 
         public Task SpawnPlayer(uint entityId, Guid uuid, Vector3 position, float pitch, float yaw, Game.Entities.EntityMetadata.Player metadata)
@@ -241,29 +240,19 @@ namespace MineCase.Server.Network.Play
             }
         }
 
-        private static SpawnMob CreateSpawnMob<T>(uint entityId, Guid uuid, byte entityType, Vector3 position, float pitch, float yaw, T metadata, Action<BinaryWriter> action)
+        private static SpawnMob CreateSpawnMob(uint entityId, Guid uuid, byte entityType, Vector3 position, float pitch, float yaw)
         {
-            using (var stream = new MemoryStream())
+            return new SpawnMob
             {
-                using (var bw = new BinaryWriter(stream, Encoding.UTF8, true))
-                {
-                    action(bw);
-                    bw.WriteAsByte(0xFF);
-                }
-
-                return new SpawnMob
-                {
-                    EID = entityId,
-                    EntityUUID = uuid,
-                    Type = entityType,
-                    X = position.X,
-                    Y = position.Y,
-                    Z = position.Z,
-                    Pitch = 0,
-                    Yaw = 0,
-                    Metadata = stream.ToArray()
-                };
-            }
+                EID = entityId,
+                EntityUUID = uuid,
+                Type = entityType,
+                X = position.X,
+                Y = position.Y,
+                Z = position.Z,
+                Pitch = 0,
+                Yaw = 0,
+            };
         }
 
         // TODO update params for 1.15.2
@@ -513,11 +502,25 @@ namespace MineCase.Server.Network.Play
             return SendPacket(new OpenWindow
             {
                 WindowId = windowId,
-                WindowType = windowType,
-                WindowTitle = windowTitle,
-                NumberOfSlots = numberOfSlots,
-                EntityId = entityId
+                WindowType = ToMenuType(windowType, numberOfSlots),
+                WindowTitle = windowTitle
             });
+        }
+
+        // 1.14+ identifies windows by menu type registry id instead of the 1.12 name plus slot count.
+        private static uint ToMenuType(string windowType, byte numberOfSlots)
+        {
+            switch (windowType)
+            {
+                case "minecraft:chest" when numberOfSlots % 9 == 0 && numberOfSlots >= 9 && numberOfSlots <= 54:
+                    return (uint)(numberOfSlots / 9) - 1;
+                case "minecraft:crafting_table":
+                    return 11;
+                case "minecraft:furnace":
+                    return 13;
+                default:
+                    throw new NotSupportedException($"No 1.15.2 menu type for window '{windowType}' with {numberOfSlots} slots.");
+            }
         }
 
         public Task CloseWindow(byte windowId)

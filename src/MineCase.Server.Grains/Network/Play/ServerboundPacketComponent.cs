@@ -85,7 +85,7 @@ namespace MineCase.Server.Network.Play
                     break;
 
                 // Player On Ground
-                case 0x0D:
+                case 0x14:
                     task = DispatchPacket(PacketDeserializer.Deserialize<PlayerOnGround>(ref br));
                     break;
 

@@ -8,7 +8,7 @@ using Orleans;
 namespace MineCase.Protocol.Play
 {
     [GenerateSerializer]
-    [Packet(0x06)]
+    [Packet(0x07)]
     [GeneratePacketSerializer]
     public sealed partial class ServerboundConfirmTransaction : IPacket
     {
@@ -26,7 +26,7 @@ namespace MineCase.Protocol.Play
     }
 
     [GenerateSerializer]
-    [Packet(0x11)]
+    [Packet(0x13)]
     [GeneratePacketSerializer]
     public sealed partial class ClientboundConfirmTransaction : IPacket
     {

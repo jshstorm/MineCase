@@ -8,7 +8,7 @@ using Orleans;
 namespace MineCase.Protocol.Play
 {
     [GenerateSerializer]
-    [Packet(0x0A)]
+    [Packet(0x0B)]
     [GeneratePacketSerializer]
     public sealed partial class ServerboundPluginMessage : IPacket
     {

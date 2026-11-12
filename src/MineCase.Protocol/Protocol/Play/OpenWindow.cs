@@ -12,24 +12,19 @@ namespace MineCase.Protocol.Play
     public sealed class OpenWindow : IPacket
     {
         [Id(0)]
-        [SerializeAs(DataType.Byte)]
-        public byte WindowId;
+        [SerializeAs(DataType.VarInt)]
+        public uint WindowId;
 
+        /// <summary>
+        /// Menu type id from the 1.14+ registry (generic_9x3 = 2, crafting = 11, furnace = 13, ...).
+        /// </summary>
         [Id(1)]
-        [SerializeAs(DataType.String)]
-        public string WindowType;
+        [SerializeAs(DataType.VarInt)]
+        public uint WindowType;
 
         [Id(2)]
         [SerializeAs(DataType.Chat)]
         public Chat WindowTitle;
-
-        [Id(3)]
-        [SerializeAs(DataType.Byte)]
-        public byte NumberOfSlots;
-
-        [Id(4)]
-        [SerializeAs(DataType.Byte)]
-        public byte? EntityId;
 
         public void Deserialize(ref SpanReader br)
         {
@@ -38,12 +33,9 @@ namespace MineCase.Protocol.Play
 
         public void Serialize(BinaryWriter bw)
         {
-            bw.WriteAsByte(WindowId);
-            bw.WriteAsString(WindowType);
+            bw.WriteAsVarInt(WindowId, out _);
+            bw.WriteAsVarInt(WindowType, out _);
             bw.WriteAsChat(WindowTitle);
-            bw.WriteAsByte(NumberOfSlots);
-            if (EntityId.HasValue)
-                bw.WriteAsByte(EntityId.Value);
         }
     }
 }

@@ -9,7 +9,7 @@ namespace MineCase.Protocol.Play
 {
     // FIXME : 1.15.2 does not have this packet
     [GenerateSerializer]
-    [Packet(0x26)]
+    [Packet(0x29)]
     [GeneratePacketSerializer]
     public sealed partial class EntityRelativeMove : IPacket
     {
